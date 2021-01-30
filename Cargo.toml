@@ -1,0 +1,32 @@
+[package]
+name = "bzip2-rs"
+version = "0.1.0"
+authors = ["Paolo Barbolini <paolo@paolo565.org>"]
+description = "Pure Rust bzip2 decompressor"
+license = "MIT/Apache-2.0"
+categories = ["compression"]
+keywords = ["bzip2"]
+repository = "https://github.com/paolobarbolini/bzip2-rs"
+readme = "README.md"
+edition = "2018"
+
+[dependencies]
+crc32fast = "1.2.1"
+tinyvec = "1.1"
+
+[dev-dependencies]
+pretty_assertions = "0.6"
+
+# bench
+criterion = "0.3.4"
+bzip2 = "0.4.1"
+
+[features]
+default = []
+rustc_1_37 = []
+rustc_1_40 = ["rustc_1_37", "tinyvec/rustc_1_40"]
+rustc_1_51 = ["rustc_1_40", "tinyvec/nightly_const_generics"]
+
+[[bench]]
+harness = false
+name = "decoder_reader"
