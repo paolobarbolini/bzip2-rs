@@ -23,14 +23,8 @@ impl MoveToFrontDecoder {
         self.symbols.copy_within(..usize::from(n), 1);
         #[cfg(not(feature = "rustc_1_37"))]
         {
-            assert!((usize::from(n) + 1) <= self.symbols.len());
-            unsafe {
-                std::ptr::copy(
-                    self.symbols.as_ptr(),
-                    self.symbols.as_mut_ptr().add(1),
-                    usize::from(n),
-                );
-            }
+            let symbols = self.symbols;
+            self.symbols[1..=usize::from(n)].copy_from_slice(&symbols[..usize::from(n)]);
         }
         self.symbols[0] = b;
 

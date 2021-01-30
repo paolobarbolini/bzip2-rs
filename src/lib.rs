@@ -8,14 +8,14 @@
 //! ## Features
 //!
 //! * No features are enabled by default, Rust >= 1.34.2 is supported
-//! * `rustc_1_37`: enables Rust >= 1.37 optimizations, and forbids the usage of `unsafe`.
+//! * `rustc_1_37`: enables Rust >= 1.37 optimizations
 //! * `rustc_1_40`: enables Rust >= 1.40 optimizations
 //! * `rustc_1_51`: enables Rust >= 1.51 optimizations
 //!
 //! [`Decoder`]: crate::decoder::DecoderReader
 
 #![deny(trivial_casts, trivial_numeric_casts, rust_2018_idioms)]
-#![cfg_attr(feature = "rustc_1_37", forbid(unsafe_code))]
+#![forbid(unsafe_code)]
 // TODO: remove once rustc 1.35 is our MSRV
 #![allow(clippy::manual_range_contains)]
 

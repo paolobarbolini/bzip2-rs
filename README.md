@@ -6,14 +6,12 @@
 [![Rustc Version 1.39.0+](https://img.shields.io/badge/rustc-1.34.2+-lightgray.svg)](https://blog.rust-lang.org/2019/04/11/Rust-1.34.0.html)
 [![CI](https://github.com/paolobarbolini/bzip2-rs/workflows/CI/badge.svg)](https://github.com/paolobarbolini/bzip2-rs/actions?query=workflow%3ACI)
 
-Pure Rust bzip2 decompressor.
-
-100% safe crate when using Rust >= 1.37 with the `rustc_1_37` feature.
+Pure Rust 100% safe bzip2 decompressor.
 
 ## Features
 
 * No features are enabled by default, Rust >= 1.34.2 is supported
-* `rustc_1_37`: enables Rust >= 1.37 optimizations, and forbids the usage of `unsafe`.
+* `rustc_1_37`: enables Rust >= 1.37 optimizations
 * `rustc_1_40`: enables Rust >= 1.40 optimizations
 * `rustc_1_51`: enables Rust >= 1.51 optimizations
 
