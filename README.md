@@ -31,6 +31,12 @@ let mut reader = DecoderReader::new(compressed_file);
 io::copy(&mut reader, &mut output)?;
 ```
 
+## Upcoming features
+
+* parallel decoding support (similar to [pbzip2](https://github.com/cosnicolaou/pbzip2))
+* bzip2 encoding support
+* no_std support (is anybody interested with this?)
+
 ## License
 
 Licensed under either of
