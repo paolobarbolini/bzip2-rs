@@ -1,0 +1,33 @@
+
+[package]
+name = "bzip2-rs-fuzz"
+version = "0.0.0"
+authors = ["Automatically generated"]
+publish = false
+edition = "2018"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.3"
+bzip2 = "0.4.1"
+
+[dependencies.bzip2-rs]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "decompress"
+path = "fuzz_targets/decompress.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "interop_decode"
+path = "fuzz_targets/interop_decode.rs"
+test = false
+doc = false
