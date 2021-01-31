@@ -7,10 +7,10 @@
 //!
 //! ## Features
 //!
-//! * No features are enabled by default, Rust >= 1.34.2 is supported
-//! * `rustc_1_37`: enables Rust >= 1.37 optimizations
-//! * `rustc_1_40`: enables Rust >= 1.40 optimizations
-//! * `rustc_1_51`: enables Rust >= 1.51 optimizations
+//! * Default features: Rust >= 1.34.2 is supported
+//! * `rustc_1_37`: bump MSRV to 1.37, enable more optimizations
+//! * `rustc_1_40`: bump MSRV to 1.40, enable more optimizations
+//! * `rustc_1_51`: bump MSRV to 1.51, enable more optimizations
 //!
 //! [`Decoder`]: crate::decoder::DecoderReader
 
