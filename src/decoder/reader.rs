@@ -11,15 +11,17 @@ use super::{Decoder, ReadState, WriteState};
 ///
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let mut compressed_file = File::open("tests/samplefiles/sample1.bz2")?;
+/// # fn no_run() -> Result<(), Box<dyn std::error::Error>> {
 /// let mut output = File::create("output.ref")?;
+/// # Ok(())
+/// # }
+/// # let mut output = Vec::new();
 ///
 /// let mut reader = DecoderReader::new(compressed_file);
 /// io::copy(&mut reader, &mut output)?;
-/// # drop(output);
 /// #
 /// # let expected = std::fs::read("tests/samplefiles/sample1.ref")?;
-/// # let written = std::fs::read("output.ref")?;
-/// # assert_eq!(expected, written);
+/// # assert_eq!(expected, output);
 /// #
 /// # Ok(())
 /// # }
