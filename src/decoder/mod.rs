@@ -30,6 +30,8 @@ mod reader;
 ///
 /// let mut decoder = Decoder::new();
 ///
+/// assert!(!compressed_file.is_empty(), "empty files will cause the following loop to spin forever");
+///
 /// let mut buf = [0; 1024];
 /// loop {
 ///     match decoder.read(&mut buf)? {

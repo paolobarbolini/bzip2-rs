@@ -1,8 +1,18 @@
-use std::io::Read;
+use std::io::{self, Read};
 
 use pretty_assertions::assert_eq;
 
 use bzip2_rs::decoder::DecoderReader;
+
+#[test]
+fn empty() {
+    let compressed: &[u8] = &[];
+    let mut reader = DecoderReader::new(compressed);
+
+    let mut buf = [0; 1024];
+    let err = reader.read(&mut buf).unwrap_err();
+    assert_eq!(err.kind(), io::ErrorKind::UnexpectedEof);
+}
 
 #[test]
 fn sample1() {
