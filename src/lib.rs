@@ -12,7 +12,7 @@
 //! * `rustc_1_40`: bump MSRV to 1.40, enable more optimizations
 //! * `rustc_1_51`: bump MSRV to 1.51, enable more optimizations
 //!
-//! [`Decoder`]: crate::decoder::DecoderReader
+//! [`Decoder`]: crate::decoder::Decoder
 
 #![deny(trivial_casts, trivial_numeric_casts, rust_2018_idioms)]
 #![forbid(unsafe_code)]
