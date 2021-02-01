@@ -253,10 +253,10 @@ impl Block {
                 .ok_or_else(|| BlockError::new("selector truncated"))?
             {
                 trees += 1;
-            }
 
-            if trees >= huffman_groups {
-                return Err(BlockError::new("tree index too large"));
+                if trees >= huffman_groups {
+                    return Err(BlockError::new("tree index too large"));
+                }
             }
 
             *selector_item = move_to_front_decoder.decode(trees);
