@@ -62,7 +62,7 @@ impl HuffmanTree {
                     value: pair.value,
                 };
 
-                code = code.overflowing_add(1 << (32 - length)).0;
+                code = code.wrapping_add(1 << (32 - length));
                 c
             })
             .collect::<ArrayVec<[HuffmanCode; crate::LEN_258]>>();
