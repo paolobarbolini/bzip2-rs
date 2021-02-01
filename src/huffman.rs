@@ -2,19 +2,20 @@ use tinyvec::ArrayVec;
 
 use crate::bitreader::BitReader;
 
-const INVALID_NODE_VALUE: u16 = 0xffff;
-
-#[derive(Default)]
 pub struct HuffmanTree {
-    nodes: ArrayVec<[HuffmanNode; crate::LEN_258]>,
+    nodes: [HuffmanNode; 258],
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Copy, Clone)]
 struct HuffmanNode {
-    left: u16,
-    right: u16,
-    left_value: u16,
-    right_value: u16,
+    // [right, left]
+    right_left: [HuffmanNodeState; 2],
+}
+
+#[derive(Copy, Clone)]
+enum HuffmanNodeState {
+    Next(u16),
+    Done(u16),
 }
 
 #[derive(Default)]
@@ -69,31 +70,23 @@ impl HuffmanTree {
 
         codes.sort_unstable_by(|a, b| a.code.cmp(&b.code));
 
-        let mut nodes = ArrayVec::new();
-        nodes.set_len(codes.len());
-        Self::build_huffman_node(&mut nodes, &mut 0, &codes, 0)?;
-
-        Ok(Self { nodes })
+        let mut this = HuffmanTree::default();
+        Self::build_huffman_node(&mut this.nodes[..codes.len()], &mut 0, &codes, 0)?;
+        Ok(this)
     }
 
-    pub fn decode(&self, buf: &mut BitReader<'_>) -> Result<u16, &'static str> {
-        let mut node_index = 0u16;
+    pub fn decode(&self, bits_iter: &mut BitReader<'_>) -> Option<u16> {
+        let mut node = &self.nodes[0];
 
-        loop {
-            let node = &self.nodes[node_index as usize];
-
-            let bit = buf.read_bool().ok_or("huffman bitstream truncated")?;
-
-            node_index = if bit { node.left } else { node.right };
-
-            if node_index == INVALID_NODE_VALUE {
-                return Ok(if bit {
-                    node.left_value
-                } else {
-                    node.right_value
-                });
-            }
+        for bit in bits_iter {
+            let val = &node.right_left[usize::from(bit)];
+            match val {
+                HuffmanNodeState::Next(node_index) => node = &self.nodes[*node_index as usize],
+                HuffmanNodeState::Done(value) => return Some(*value),
+            };
         }
+
+        None
     }
 
     fn build_huffman_node(
@@ -135,27 +128,39 @@ impl HuffmanTree {
 
             if left.len() == 1 {
                 let node = &mut nodes[node_index];
-                node.left = INVALID_NODE_VALUE;
-                node.left_value = left[0].value;
+                node.right_left[1] = HuffmanNodeState::Done(left[0].value);
             } else {
                 let val = Self::build_huffman_node(nodes, next_node, left, level + 1)?;
 
                 let node = &mut nodes[node_index];
-                node.left = val;
+                node.right_left[1] = HuffmanNodeState::Next(val);
             }
 
             if right.len() == 1 {
                 let node = &mut nodes[node_index];
-                node.right = INVALID_NODE_VALUE;
-                node.right_value = right[0].value;
+                node.right_left[0] = HuffmanNodeState::Done(right[0].value);
             } else {
                 let val = Self::build_huffman_node(nodes, next_node, right, level + 1)?;
 
                 let node = &mut nodes[node_index];
-                node.right = val;
+                node.right_left[0] = HuffmanNodeState::Next(val);
             }
 
             Ok(node_index as u16)
         }
+    }
+}
+
+impl Default for HuffmanTree {
+    fn default() -> Self {
+        Self {
+            nodes: [HuffmanNode::default(); 258],
+        }
+    }
+}
+
+impl Default for HuffmanNodeState {
+    fn default() -> Self {
+        HuffmanNodeState::Next(0)
     }
 }

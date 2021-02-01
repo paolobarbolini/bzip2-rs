@@ -333,7 +333,7 @@ impl Block {
 
             let v = current_huffman_tree
                 .decode(reader)
-                .map_err(BlockError::new)?;
+                .ok_or_else(|| BlockError::new("huffman bitstream truncated"))?;
             decoded += 1;
 
             if v < 2 {
