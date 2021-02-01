@@ -264,10 +264,7 @@ impl Block {
 
         // limited in lenght of huffman_used_symbols
         let mut symbols = [0u8; 256];
-        for (count, index) in huffman_used_bitmaps.iter().enumerate() {
-            symbols[count] = *index;
-        }
-
+        symbols[..huffman_used_bitmaps.len()].copy_from_slice(&huffman_used_bitmaps);
         let mut move_to_front_decoder_2 = MoveToFrontDecoder::new_from_symbols(symbols);
 
         let mut huffman_trees = ArrayVec::<[HuffmanTree; 6]>::new();
