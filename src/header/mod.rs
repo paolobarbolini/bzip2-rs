@@ -34,6 +34,12 @@ impl Header {
         }
     }
 
+    /// Construct `Header` from the raw blocksize
+    ///
+    /// # Errors
+    ///
+    /// Returns [`HeaderError::InvalidBlockSize`] if `raw_blocksize`
+    /// isn't `1..=9`
     pub fn from_raw_blocksize(raw_blocksize: u8) -> Result<Self, HeaderError> {
         if raw_blocksize < 1 || raw_blocksize > 9 {
             return Err(HeaderError::InvalidBlockSize);
@@ -46,10 +52,16 @@ impl Header {
         })
     }
 
+    /// The raw blocksize, as declared in the bzip2 header
+    ///
+    /// The returned value is always `1..=9`
     pub fn raw_blocksize(&self) -> u8 {
         self.raw_blocksize
     }
 
+    /// The maximum blocksize
+    ///
+    /// The returned value is always `100000..=900000`
     pub fn max_blocksize(&self) -> u32 {
         self.max_blocksize
     }

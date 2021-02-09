@@ -1,4 +1,4 @@
-//! bzip2_rs is a pure Rust bzip2 decoder.
+//! `bzip2_rs` is a pure Rust bzip2 decoder.
 //!
 //! ## Main APIs
 //!
@@ -18,7 +18,10 @@
     trivial_casts,
     trivial_numeric_casts,
     rust_2018_idioms,
-    clippy::cast_lossless
+    clippy::cast_lossless,
+    clippy::doc_markdown,
+    missing_docs,
+    broken_intra_doc_links
 )]
 #![forbid(unsafe_code)]
 // TODO: remove once rustc 1.35 is our MSRV

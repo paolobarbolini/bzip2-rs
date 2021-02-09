@@ -2,11 +2,16 @@ use std::error::Error as StdError;
 use std::fmt::{self, Display, Formatter};
 use std::io;
 
-/// An error returned by [`Header`][crate::header::Header]
+/// An error returned by [`Header`]
+///
+/// [`Header`]: crate::header::Header
 #[derive(Debug, Clone, PartialEq)]
 pub enum HeaderError {
+    /// The file signature isn't valid (should be `BZ`)
     InvalidSignature,
+    /// The bzip2 version isn't supported (only the huffman version is supported)
     UnsupportedVersion,
+    /// The blocksize isn't `1..=9`
     InvalidBlockSize,
 }
 

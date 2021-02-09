@@ -11,7 +11,9 @@ use crate::header::HeaderError;
 /// [`DecoderReader`]: crate::decoder::DecoderReader
 #[derive(Debug, Clone, PartialEq)]
 pub enum DecoderError {
+    /// An error was returned by the `Header` decoder
     Header(HeaderError),
+    /// An error was returned by the `Block` decoder
     Block(BlockError),
 }
 
