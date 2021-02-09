@@ -39,7 +39,7 @@ impl Header {
             return Err(HeaderError::InvalidBlockSize);
         }
 
-        let max_blocksize = 100 * 1000 * raw_blocksize as u32;
+        let max_blocksize = 100 * 1000 * u32::from(raw_blocksize);
         Ok(Self {
             raw_blocksize,
             max_blocksize,

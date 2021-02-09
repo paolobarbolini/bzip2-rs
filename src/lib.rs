@@ -14,7 +14,12 @@
 //!
 //! [`Decoder`]: crate::decoder::Decoder
 
-#![deny(trivial_casts, trivial_numeric_casts, rust_2018_idioms)]
+#![deny(
+    trivial_casts,
+    trivial_numeric_casts,
+    rust_2018_idioms,
+    clippy::cast_lossless
+)]
 #![forbid(unsafe_code)]
 // TODO: remove once rustc 1.35 is our MSRV
 #![allow(clippy::manual_range_contains)]

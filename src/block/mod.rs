@@ -356,7 +356,7 @@ impl Block {
 
                 for _ in 0..repeat {
                     let b = move_to_front_decoder_2.first();
-                    self.tt.push(b as u32);
+                    self.tt.push(u32::from(b));
                     c[b as usize] += 1;
                 }
 
@@ -372,7 +372,7 @@ impl Block {
                 return Err(BlockError::new("data exceeds block size"));
             }
 
-            self.tt.push(b as u32);
+            self.tt.push(u32::from(b));
             c[b as usize] += 1;
         }
 
