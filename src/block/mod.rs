@@ -1,5 +1,7 @@
 //! bzip2 low-level block APIs
 
+use std::mem;
+
 use tinyvec::ArrayVec;
 
 pub use self::error::BlockError;
@@ -349,18 +351,17 @@ impl Block {
                 continue;
             }
 
-            if repeat > 0 {
-                if repeat > self.header.max_blocksize() - (self.tt.len() as u32) {
+            let old_repeat = mem::replace(&mut repeat, 0);
+            if old_repeat > 0 {
+                if old_repeat > self.header.max_blocksize() - (self.tt.len() as u32) {
                     return Err(BlockError::new("repeats past end of block"));
                 }
 
-                for _ in 0..repeat {
-                    let b = move_to_front_decoder_2.first();
-                    self.tt.push(u32::from(b));
-                    c[b as usize] += 1;
-                }
-
-                repeat = 0;
+                let b = move_to_front_decoder_2.first();
+                // extend self.tt with `b` repeated `old_repeat` times
+                let new_len = self.tt.len() + old_repeat as usize;
+                self.tt.resize(new_len, u32::from(b));
+                c[b as usize] += old_repeat;
             }
 
             if v as usize == (huffman_used_bitmaps.len() + 2) - 1 {
