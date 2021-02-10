@@ -242,9 +242,9 @@ impl Block {
         #[cfg(feature = "rustc_1_51")]
         let mut selectors_list = ArrayVec::<[u8; 18001]>::new();
         #[cfg(feature = "rustc_1_51")]
-        selectors_list.set_len(selectors_used as usize);
+        selectors_list.set_len(usize::from(selectors_used));
         #[cfg(not(feature = "rustc_1_51"))]
-        let mut selectors_list = vec![0u8; selectors_used as usize];
+        let mut selectors_list = vec![0u8; usize::from(selectors_used)];
 
         let mut move_to_front_decoder = MoveToFrontDecoder::new();
         for selector_item in selectors_list.iter_mut().rev() {
@@ -313,7 +313,7 @@ impl Block {
             .pop()
             .ok_or_else(|| BlockError::new("no tree selectors given"))?;
         let mut current_huffman_tree = huffman_trees
-            .get(selector as usize)
+            .get(usize::from(selector))
             .ok_or_else(|| BlockError::new("tree selector out of range"))?;
 
         let mut repeat = 0u32;
@@ -328,7 +328,7 @@ impl Block {
                 })?;
 
                 current_huffman_tree = huffman_trees
-                    .get(selector as usize)
+                    .get(usize::from(selector))
                     .ok_or_else(|| BlockError::new("tree selector out of range"))?;
                 decoded = 0;
             }
@@ -361,23 +361,23 @@ impl Block {
                 // extend self.tt with `b` repeated `old_repeat` times
                 let new_len = self.tt.len() + old_repeat as usize;
                 self.tt.resize(new_len, u32::from(b));
-                c[b as usize] += old_repeat;
+                c[usize::from(b)] += old_repeat;
             }
 
-            if v as usize == (huffman_used_bitmaps.len() + 2) - 1 {
+            if usize::from(v) == (huffman_used_bitmaps.len() + 2) - 1 {
                 break;
             }
 
             let b = move_to_front_decoder_2.decode((v - 1) as u8);
-            if self.tt.len() as u32 >= self.header.max_blocksize() {
+            if self.tt.len() >= self.header.max_blocksize() as usize {
                 return Err(BlockError::new("data exceeds block size"));
             }
 
             self.tt.push(u32::from(b));
-            c[b as usize] += 1;
+            c[usize::from(b)] += 1;
         }
 
-        if orig_ptr >= (self.tt.len() as u32) {
+        if (orig_ptr as usize) >= self.tt.len() {
             return Err(BlockError::new("orig_ptr out of bounds"));
         }
 
