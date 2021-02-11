@@ -81,7 +81,7 @@ impl HuffmanTree {
         for bit in bits_iter {
             let val = &node.right_left[usize::from(bit)];
             match val {
-                HuffmanNodeState::Next(node_index) => node = &self.nodes[*node_index as usize],
+                HuffmanNodeState::Next(node_index) => node = &self.nodes[usize::from(*node_index)],
                 HuffmanNodeState::Done(value) => return Some(*value),
             };
         }

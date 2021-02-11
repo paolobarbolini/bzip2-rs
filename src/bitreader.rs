@@ -16,7 +16,7 @@ impl<'a> BitReader<'a> {
         }
 
         let mut value = 0;
-        for bit in self.take(bit_count as usize) {
+        for bit in self.take(usize::from(bit_count)) {
             value = (value << 1) | u8::from(bit);
         }
         Some(value)
@@ -30,7 +30,7 @@ impl<'a> BitReader<'a> {
         }
 
         let mut value = 0;
-        for bit in self.take(bit_count as usize) {
+        for bit in self.take(usize::from(bit_count)) {
             value = (value << 1) | u16::from(bit);
         }
         Some(value)
@@ -44,7 +44,7 @@ impl<'a> BitReader<'a> {
         }
 
         let mut value = 0;
-        for bit in self.take(bit_count as usize) {
+        for bit in self.take(usize::from(bit_count)) {
             value = (value << 1) | u32::from(bit);
         }
         Some(value)
@@ -58,7 +58,7 @@ impl<'a> BitReader<'a> {
         }
 
         let mut value = 0;
-        for bit in self.take(bit_count as usize) {
+        for bit in self.take(usize::from(bit_count)) {
             value = (value << 1) | u64::from(bit);
         }
         Some(value)

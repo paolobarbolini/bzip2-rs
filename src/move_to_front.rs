@@ -45,14 +45,14 @@ mod tests {
         let mut decoder = MoveToFrontDecoder::new();
 
         for i in 0..=255 {
-            assert_eq!(i, decoder.symbols[i] as usize);
+            assert_eq!(i, usize::from(decoder.symbols[i]));
         }
 
         let decode = decoder.decode(0);
         assert_eq!(decode, 0);
 
         for i in 0..=255 {
-            assert_eq!(i, decoder.symbols[i] as usize);
+            assert_eq!(i, usize::from(decoder.symbols[i]));
         }
 
         let decode = decoder.decode(5);
@@ -65,7 +65,7 @@ mod tests {
         assert_eq!(decoder.symbols[4], 3);
         assert_eq!(decoder.symbols[5], 4);
         for i in 6..=255 {
-            assert_eq!(i, decoder.symbols[i] as usize);
+            assert_eq!(i, usize::from(decoder.symbols[i]));
         }
     }
 }
