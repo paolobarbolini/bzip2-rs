@@ -95,7 +95,7 @@ impl HuffmanTree {
         codes: &[HuffmanCode],
         level: u32,
     ) -> Result<u16, &'static str> {
-        let test = 1u32 << (31 - level);
+        let test = 1u32.rotate_right(level);
 
         let first_right_index = codes
             .iter()
