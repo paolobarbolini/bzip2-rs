@@ -24,6 +24,7 @@ bzip2 = "0.4.1"
 [features]
 default = []
 rustc_1_37 = []
+# soft deprecated, we don't need this tinyvec feature
 rustc_1_40 = ["rustc_1_37", "tinyvec/rustc_1_40"]
 rustc_1_51 = ["rustc_1_40", "tinyvec/nightly_const_generics"]
 
