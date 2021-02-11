@@ -22,10 +22,10 @@ use std::io;
 use bzip2_rs::DecoderReader;
 
 let mut compressed_file = File::open("input.bz2")?;
-let mut output = File::create("output")?;
+let mut decompressed_output = File::create("output")?;
 
 let mut reader = DecoderReader::new(compressed_file);
-io::copy(&mut reader, &mut output)?;
+io::copy(&mut reader, &mut decompressed_output)?;
 ```
 
 ## Upcoming features

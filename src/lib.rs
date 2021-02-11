@@ -11,6 +11,23 @@
 //! * `rustc_1_37`: bump MSRV to 1.37, enable more optimizations
 //! * `rustc_1_51`: bump MSRV to 1.51, enable more optimizations
 //!
+//! ## Usage
+//!
+//! ```rust,no_run
+//! use std::fs::File;
+//! use std::io;
+//! use bzip2_rs::DecoderReader;
+//!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! let mut compressed_file = File::open("input.bz2")?;
+//! let mut decompressed_output = File::create("output")?;
+//!
+//! let mut reader = DecoderReader::new(compressed_file);
+//! io::copy(&mut reader, &mut decompressed_output)?;
+//! # Ok(())
+//! # }
+//! ```
+//!
 //! [`Decoder`]: crate::decoder::Decoder
 
 #![deny(
