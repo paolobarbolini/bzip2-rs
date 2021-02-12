@@ -29,7 +29,7 @@ rustc_1_40 = ["rustc_1_37", "tinyvec/rustc_1_40"]
 # deprecated: the nightly_const_generics tinyvec feature also requires
 # `array_map` to be stabilized. This should have been called nightly
 rustc_1_51 = []
-nightly = ["rustc_1_40", "tinyvec/nightly_const_generics"]
+nightly = ["rustc_1_40", "tinyvec/nightly_const_generics", "crc32fast/nightly"]
 
 [[bench]]
 harness = false
