@@ -90,7 +90,7 @@ jobs:
         run: |
           cargo test --features rustc_1_40
 
-      - name: Test (with rustc 1.51 optimizations)
+      - name: Test (with rustc nightly optimizations)
         if: matrix.rust == 'nightly'
         run: |
-          cargo test --features rustc_1_51
+          cargo test --features nightly

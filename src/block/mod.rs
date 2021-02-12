@@ -239,11 +239,11 @@ impl Block {
             .read_u16(15)
             .ok_or_else(|| BlockError::new("selectors used truncated"))?;
 
-        #[cfg(feature = "rustc_1_51")]
+        #[cfg(feature = "nightly")]
         let mut selectors_list = ArrayVec::<[u8; 18001]>::new();
-        #[cfg(feature = "rustc_1_51")]
+        #[cfg(feature = "nightly")]
         selectors_list.set_len(usize::from(selectors_used));
-        #[cfg(not(feature = "rustc_1_51"))]
+        #[cfg(not(feature = "nightly"))]
         let mut selectors_list = vec![0u8; usize::from(selectors_used)];
 
         let mut move_to_front_decoder = MoveToFrontDecoder::new();

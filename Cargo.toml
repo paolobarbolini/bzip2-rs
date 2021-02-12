@@ -24,9 +24,12 @@ bzip2 = "0.4.1"
 [features]
 default = []
 rustc_1_37 = []
-# soft deprecated, we don't need this tinyvec feature
+# soft deprecated: we don't need this tinyvec feature
 rustc_1_40 = ["rustc_1_37", "tinyvec/rustc_1_40"]
-rustc_1_51 = ["rustc_1_40", "tinyvec/nightly_const_generics"]
+# deprecated: the nightly_const_generics tinyvec feature also requires
+# `array_map` to be stabilized. This should have been called nightly
+rustc_1_51 = []
+nightly = ["rustc_1_40", "tinyvec/nightly_const_generics"]
 
 [[bench]]
 harness = false
