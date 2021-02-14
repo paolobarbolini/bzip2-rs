@@ -104,13 +104,14 @@ impl<'a> Iterator for BitReader<'a> {
 /// with 64 bit registers.
 /// NOTE: a few points are assumed by this bitreader
 ///
-/// * `<CachedBitReader as Iterator>::next` won't be called more than 57 times
-/// * The 57 times limit can be reset by calling `CachedBitReader::refresh`
+/// * `<CachedBitReader as Iterator>::next` will never yield `None`, even after
+///   the guaranteed to be valid 57 bits have been exhausted.
+/// * The soft limit on 57 bits can be reset by calling `CachedBitReader::refresh`
 /// * At least 8 bytes must be available in the `BitReader` passed to `CachedBitReader::refresh`
 /// * If `<CachedBitReader as Iterator>::next` may have been called at least one time,
 ///   `CachedBitReader::restore` must be called in order to update the `BitReader::position`
 /// * `CachedBitReader::restore` must be called before calling `CachedBitReader::refresh`,
-///   unless `CachedBitReader::read == 0`
+///   unless `CachedBitReader::read() == 0`
 #[cfg(target_pointer_width = "64")]
 pub struct CachedBitReader {
     cache: u64,
@@ -135,15 +136,16 @@ impl CachedBitReader {
         Some(())
     }
 
-    pub fn remaining(&self) -> usize {
-        // bits in u64 - bits read - bits which might be garbage
-        64 - self.read - 7
+    pub fn read(&self) -> usize {
+        self.read
     }
 
-    pub fn restore(&mut self, reader: &mut BitReader<'_>) {
-        reader.position += self.read;
+    pub fn overflowed(&self) -> bool {
+        self.read() > 57
+    }
 
-        self.read = 0;
+    pub fn restore(&mut self, reader: &mut BitReader<'_>, read: usize) {
+        reader.position += read;
     }
 }
 
@@ -152,8 +154,6 @@ impl Iterator for CachedBitReader {
     type Item = bool;
 
     fn next(&mut self) -> Option<Self::Item> {
-        debug_assert!(self.read <= (64 - 7));
-
         // read the left most bit
         let bit = self.cache & !(u64::max_value() >> 1);
 

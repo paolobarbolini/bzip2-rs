@@ -339,16 +339,20 @@ impl Block {
             }
 
             #[cfg(target_pointer_width = "64")]
-            {
-                if r.remaining() < 16 {
-                    r.restore(reader);
+            let v = {
+                let read = r.read();
+                let v = current_huffman_tree.decode(&mut r);
+
+                if r.overflowed() {
+                    r.restore(reader, read);
                     r.refresh(reader)
                         .ok_or_else(|| BlockError::new("huffman bitstream truncated"))?;
-                }
-            }
 
-            #[cfg(target_pointer_width = "64")]
-            let v = current_huffman_tree.decode(&mut r);
+                    current_huffman_tree.decode(&mut r)
+                } else {
+                    v
+                }
+            };
             #[cfg(not(target_pointer_width = "64"))]
             let v = current_huffman_tree.decode(reader);
 
@@ -394,7 +398,7 @@ impl Block {
             c[usize::from(b)] += 1;
         }
         #[cfg(target_pointer_width = "64")]
-        r.restore(reader);
+        r.restore(reader, r.read());
 
         if (orig_ptr as usize) >= self.tt.len() {
             return Err(BlockError::new("orig_ptr out of bounds"));
