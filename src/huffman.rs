@@ -1,7 +1,5 @@
 use tinyvec::ArrayVec;
 
-use crate::bitreader::BitReader;
-
 pub struct HuffmanTree {
     nodes: [HuffmanNode; 258],
 }
@@ -75,7 +73,10 @@ impl HuffmanTree {
         Ok(this)
     }
 
-    pub fn decode(&self, bits_iter: &mut BitReader<'_>) -> Option<u16> {
+    pub fn decode<I>(&self, bits_iter: &mut I) -> Option<u16>
+    where
+        I: Iterator<Item = bool>,
+    {
         let mut node = &self.nodes[0];
 
         for bit in bits_iter {

@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 pub struct BitReader<'a> {
     bytes: &'a [u8],
     position: usize,
@@ -95,5 +97,69 @@ impl<'a> Iterator for BitReader<'a> {
 
         let bit = byte << (position % 8);
         Some(bit & 0b1000_0000 != 0)
+    }
+}
+
+/// A bitreader which can read at most 57 bits, but is faster on systems
+/// with 64 bit registers.
+/// NOTE: a few points are assumed by this bitreader
+///
+/// * `<CachedBitReader as Iterator>::next` won't be called more than 57 times
+/// * The 57 times limit can be reset by calling `CachedBitReader::refresh`
+/// * At least 8 bytes must be available in the `BitReader` passed to `CachedBitReader::refresh`
+/// * If `<CachedBitReader as Iterator>::next` may have been called at least one time,
+///   `CachedBitReader::restore` must be called in order to update the `BitReader::position`
+/// * `CachedBitReader::restore` must be called before calling `CachedBitReader::refresh`,
+///   unless `CachedBitReader::read == 0`
+#[cfg(target_pointer_width = "64")]
+pub struct CachedBitReader {
+    cache: u64,
+    read: usize,
+}
+
+#[cfg(target_pointer_width = "64")]
+impl CachedBitReader {
+    pub fn new(reader: &BitReader<'_>) -> Option<Self> {
+        let mut this = Self { cache: 0, read: 0 };
+        this.refresh(reader)?;
+        Some(this)
+    }
+
+    pub fn refresh(&mut self, reader: &BitReader<'_>) -> Option<()> {
+        let pos = reader.position / 8;
+        let data = reader.bytes.get(pos..pos + 8)?;
+
+        self.cache = u64::from_be_bytes(data.try_into().unwrap());
+        self.cache <<= reader.position % 8;
+        self.read = 0;
+        Some(())
+    }
+
+    pub fn remaining(&self) -> usize {
+        // bits in u64 - bits read - bits which might be garbage
+        64 - self.read - 7
+    }
+
+    pub fn restore(&mut self, reader: &mut BitReader<'_>) {
+        reader.position += self.read;
+
+        self.read = 0;
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
+impl Iterator for CachedBitReader {
+    type Item = bool;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        debug_assert!(self.read <= (64 - 7));
+
+        // read the left most bit
+        let bit = self.cache & !(u64::max_value() >> 1);
+
+        self.read += 1;
+        self.cache <<= 1;
+
+        Some(bit != 0)
     }
 }

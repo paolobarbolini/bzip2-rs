@@ -6,6 +6,8 @@ use tinyvec::ArrayVec;
 
 pub use self::error::BlockError;
 use crate::bitreader::BitReader;
+#[cfg(target_pointer_width = "64")]
+use crate::bitreader::CachedBitReader;
 use crate::crc::Hasher;
 use crate::header::Header;
 use crate::huffman::HuffmanTree;
@@ -321,6 +323,9 @@ impl Block {
         let mut c = [0u32; 256];
 
         let mut decoded = 0;
+        #[cfg(target_pointer_width = "64")]
+        let mut r = CachedBitReader::new(reader)
+            .ok_or_else(|| BlockError::new("huffman bitstream truncated"))?;
         loop {
             if decoded == 50 {
                 let selector = selectors_list.pop().ok_or_else(|| {
@@ -333,9 +338,21 @@ impl Block {
                 decoded = 0;
             }
 
-            let v = current_huffman_tree
-                .decode(reader)
-                .ok_or_else(|| BlockError::new("huffman bitstream truncated"))?;
+            #[cfg(target_pointer_width = "64")]
+            {
+                if r.remaining() < 16 {
+                    r.restore(reader);
+                    r.refresh(reader)
+                        .ok_or_else(|| BlockError::new("huffman bitstream truncated"))?;
+                }
+            }
+
+            #[cfg(target_pointer_width = "64")]
+            let v = current_huffman_tree.decode(&mut r);
+            #[cfg(not(target_pointer_width = "64"))]
+            let v = current_huffman_tree.decode(reader);
+
+            let v = v.ok_or_else(|| BlockError::new("huffman bitstream truncated"))?;
             decoded += 1;
 
             if v < 2 {
@@ -376,6 +393,8 @@ impl Block {
             self.tt.push(u32::from(b));
             c[usize::from(b)] += 1;
         }
+        #[cfg(target_pointer_width = "64")]
+        r.restore(reader);
 
         if (orig_ptr as usize) >= self.tt.len() {
             return Err(BlockError::new("orig_ptr out of bounds"));
