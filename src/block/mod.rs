@@ -405,7 +405,7 @@ impl Block {
         }
 
         self.pre_rle_used = 0;
-        self.t_pos = bwt::inverse_bwt(&mut self.tt, orig_ptr as usize, &mut c);
+        self.t_pos = bwt::inverse_bwt(&mut self.tt, orig_ptr as usize, c);
         self.last_byte = -1;
         self.byte_repeats = 0;
         self.repeats = 0;
