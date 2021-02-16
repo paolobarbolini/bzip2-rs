@@ -1,0 +1,7 @@
+# Stable
+edition = "2018"
+
+# Unstable
+format_code_in_doc_comments = true
+group_imports = "StdExternalCrate"
+imports_granularity = "Module"

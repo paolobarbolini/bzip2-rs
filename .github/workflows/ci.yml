@@ -20,7 +20,7 @@ jobs:
 
       - name: Install rust
         run: |
-          rustup update --no-self-update stable
+          rustup default nightly-2021-02-16
           rustup component add rustfmt
 
       - name: cargo fmt -- --check

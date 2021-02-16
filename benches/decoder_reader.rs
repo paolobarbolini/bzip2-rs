@@ -1,10 +1,9 @@
 use std::fs;
 use std::io::Read;
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-
 use bzip2::read::BzDecoder;
 use bzip2_rs::decoder::DecoderReader;
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn bench_decode(c: &mut Criterion) {
     let compressed = fs::read("tests/samplefiles/sample2.bz2").unwrap();

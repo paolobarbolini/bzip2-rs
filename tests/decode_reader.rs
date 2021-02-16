@@ -1,8 +1,7 @@
 use std::io::{self, Read};
 
-use pretty_assertions::assert_eq;
-
 use bzip2_rs::decoder::DecoderReader;
+use pretty_assertions::assert_eq;
 
 #[test]
 fn empty() {

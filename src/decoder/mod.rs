@@ -22,7 +22,7 @@ mod reader;
 /// into the entire file being decompressed.
 ///
 /// ```rust
-/// use bzip2_rs::decoder::{Decoder, WriteState, ReadState};
+/// use bzip2_rs::decoder::{Decoder, ReadState, WriteState};
 ///
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let mut compressed_file: &[u8] = include_bytes!("../../tests/samplefiles/sample1.bz2").as_ref();
@@ -30,7 +30,10 @@ mod reader;
 ///
 /// let mut decoder = Decoder::new();
 ///
-/// assert!(!compressed_file.is_empty(), "empty files will cause the following loop to spin forever");
+/// assert!(
+///     !compressed_file.is_empty(),
+///     "empty files will cause the following loop to spin forever"
+/// );
 ///
 /// let mut buf = [0; 1024];
 /// loop {
@@ -45,11 +48,11 @@ mod reader;
 ///                 WriteState::NeedsRead => unreachable!(),
 ///                 WriteState::Written(written) => compressed_file = &compressed_file[written..],
 ///             };
-///         },
+///         }
 ///         ReadState::Read(n) => {
 ///             // `n` uncompressed bytes have been read into `buf`
 ///             output.extend_from_slice(&buf[..n]);
-///         },
+///         }
 ///         ReadState::Eof => {
 ///             // we reached the end of the file
 ///             break;
