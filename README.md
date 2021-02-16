@@ -2,7 +2,7 @@
 
 [![crates.io](https://img.shields.io/crates/v/bzip2-rs.svg)](https://crates.io/crates/bzip2-rs)
 [![Documentation](https://docs.rs/bzip2-rs/badge.svg)](https://docs.rs/bzip2-rs)
-[![dependency status](https://deps.rs/crate/bzip2-rs/0.1.1/status.svg)](https://deps.rs/crate/bzip2-rs/0.1.1)
+[![dependency status](https://deps.rs/crate/bzip2-rs/0.1.2/status.svg)](https://deps.rs/crate/bzip2-rs/0.1.2)
 [![Rustc Version 1.34.2+](https://img.shields.io/badge/rustc-1.34.2+-lightgray.svg)](https://blog.rust-lang.org/2019/04/11/Rust-1.34.0.html)
 [![CI](https://github.com/paolobarbolini/bzip2-rs/workflows/CI/badge.svg)](https://github.com/paolobarbolini/bzip2-rs/actions?query=workflow%3ACI)
 
