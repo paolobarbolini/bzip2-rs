@@ -8,6 +8,7 @@ pub use self::error::BlockError;
 use crate::bitreader::BitReader;
 #[cfg(target_pointer_width = "64")]
 use crate::bitreader::CachedBitReader;
+use crate::block_common::*;
 use crate::crc::Hasher;
 use crate::header::Header;
 use crate::huffman::HuffmanTree;
@@ -15,9 +16,6 @@ use crate::move_to_front::MoveToFrontDecoder;
 
 mod bwt;
 mod error;
-
-const BLOCK_MAGIC: u64 = 0x314159265359;
-const FINAL_MAGIC: u64 = 0x177245385090;
 
 pub(crate) struct Block {
     header: Header,

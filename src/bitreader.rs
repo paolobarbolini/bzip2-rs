@@ -169,3 +169,48 @@ impl Iterator for CachedBitReader {
         Some(bit != 0)
     }
 }
+
+pub struct BitWriter<'a> {
+    bytes: &'a mut [u8],
+    position: usize,
+}
+
+impl<'a> BitWriter<'a> {
+    pub fn new(bytes: &'a mut [u8]) -> Self {
+        Self { bytes, position: 0 }
+    }
+
+    pub fn write_bit(&mut self, bit: bool) -> Option<()> {
+        let position = self.position / 8;
+        self.position += 1;
+
+        let byte = self.bytes.get_mut(position)?;
+        let idx = position % 8;
+        *byte = *byte | (u8::from(bit) << (7 - idx));
+
+        Some(())
+    }
+
+    pub fn write_value(&mut self, val: u64, bit_count: u8) -> Option<()> {
+        for i in (0..bit_count).rev() {
+            self.write_bit((val & (1 << i)) != 0)?;
+        }
+        Some(())
+    }
+
+    pub fn write_byte(&mut self, byte: u8) -> Option<()> {
+        self.write_value(u64::from(byte), 8)
+    }
+
+    pub fn write_u16(&mut self, val: u16) -> Option<()> {
+        self.write_value(u64::from(val), 16)
+    }
+
+    pub fn write_u32(&mut self, val: u32) -> Option<()> {
+        self.write_value(u64::from(val), 32)
+    }
+
+    pub fn write_u64(&mut self, val: u64) -> Option<()> {
+        self.write_value(val, 64)
+    }
+}

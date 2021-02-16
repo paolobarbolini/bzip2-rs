@@ -66,6 +66,13 @@ impl Hasher {
             (reversed >> 16) & 0x0000ffff | (reversed << 16) & 0xffff0000
         }
     }
+
+    pub fn reset(&mut self) {
+        self.val.reset();
+        for x in self.bytes.iter_mut() {
+            *x = 0;
+        }
+    }
 }
 
 #[cfg(test)]

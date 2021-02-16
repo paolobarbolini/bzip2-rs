@@ -34,6 +34,14 @@ impl Header {
         }
     }
 
+    /// Write header into the buffer
+    pub fn write(&self, buf: &mut [u8; 4]) {
+        buf[0] = b'B';
+        buf[1] = b'Z';
+        buf[2] = b'h';
+        buf[3] = self.raw_blocksize() + b'0';
+    }
+
     /// Construct `Header` from the raw blocksize
     ///
     /// # Errors
