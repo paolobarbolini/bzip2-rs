@@ -3,6 +3,8 @@ use crate::block_common::*;
 use crate::crc::Hasher;
 use crate::header::Header;
 
+mod blocksort;
+
 #[derive(Clone, Copy, Debug)]
 enum State {
     /// Writing compressed data
@@ -81,7 +83,7 @@ impl Block {
     pub fn write(&mut self, writer: &mut BitWriter<'_>) -> usize {
         match self.state {
             State::ReadyToCompress => {
-
+                blocksort::block_sort();
             }
             State::Writing => {
                 // TODO: how to check buf size
@@ -97,4 +99,16 @@ impl Block {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn encode_test(filename: &str) {
+        let compressed = include_bytes!(format!("../../tests/samplefiles/{}.bz2", filename));
+        let decompressed = include_bytes!(format!("../../tests/samplefiles/{}.ref", filename));
+
+        todo!();
+    }
+
+    #[test]
+    fn encode_small_test() {
+        encode_test("sample1");
+    }
 }
