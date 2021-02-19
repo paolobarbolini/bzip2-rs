@@ -46,9 +46,16 @@ enum State {
 
 impl Compressor {
     /// Create [`Compressor`] with custom blocksize
-    pub fn new(raw_blocksize: u8) -> Self {
+    pub fn new(raw_blocksize: u8, work_factor: u8) -> Self {
+        if work_factor > 250 {
+            work_factor = 250;
+        }
+        if work_factor == 0 {
+            work_factor = 30;
+        }
+
         let header = Header::from_raw_blocksize(raw_blocksize).expect("is valid block size");
-        let block = Block::new(header.clone());
+        let block = Block::new(header.clone(), work_factor);
 
         Self {
             header,
@@ -59,7 +66,7 @@ impl Compressor {
 
     /// Create [`Compressor`] with best blocksize
     pub fn default_new() -> Self {
-        Self::new(9)
+        Self::new(9, 0)
     }
 
     /// Write uncompressed data into this [`Compressor`]

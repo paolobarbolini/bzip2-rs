@@ -7,8 +7,10 @@ mod blocksort;
 
 #[derive(Clone, Copy, Debug)]
 enum State {
-    /// Writing compressed data
-    Writing,
+    /// Writing block header
+    WritingHeader,
+    /// Writing block data
+    WritingBlock,
     /// Not writing compressed data
     NotWriting,
     /// Awaiting compression
@@ -22,10 +24,11 @@ pub(crate) struct Block {
     in_buf: Vec<u8>,
     block_crc: u32,
     combined_crc: u32,
+    work_factor: u8,
 }
 
 impl Block {
-    pub fn new(header: Header) -> Self {
+    pub fn new(header: Header, work_factor: u8) -> Self {
         let in_buf = Vec::with_capacity(header.max_blocksize() as usize);
 
         Self {
@@ -35,16 +38,18 @@ impl Block {
             hasher: Hasher::new(),
             block_crc: 0,
             combined_crc: 0,
+            work_factor,
         }
     }
 
     pub fn reset(&mut self) {
         self.in_buf.clear();
         self.hasher.reset();
+        self.state = State::NotWriting;
     }
 
-    pub fn ready_to_write(&mut self) {
-        self.state = State::Writing;
+    pub fn ready_to_compress(&mut self) {
+        self.state = State::ReadyToCompress;
         self.hasher.finalyze();
         // TOOD: this should also handle whole stream CRC
     }
@@ -57,7 +62,7 @@ impl Block {
         self.hasher.update(slice_taken);
 
         if self.space() == 0 {
-            self.ready_to_write();
+            self.ready_to_compress();
         }
 
         return written;
@@ -75,20 +80,34 @@ impl Block {
 
     pub fn is_writing(&self) -> bool {
         match self.state {
-            State::Writing => true,
+            State::WritingHeader | State::WritingBlock => true,
             State::NotWriting | State::ReadyToCompress => false,
         }
+    }
+
+    /// Generates the absolute minimum
+    /// data required to be generated without
+    /// requiring to write
+    /// (uptil the huffman tables and selectors list)
+    fn compress_buffer(&mut self) {
+        todo!();
+        blocksort::block_sort();
     }
 
     pub fn write(&mut self, writer: &mut BitWriter<'_>) -> usize {
         match self.state {
             State::ReadyToCompress => {
-                blocksort::block_sort();
+                self.compress_buffer();
+                self.write(writer); // return this value ig
+                todo!();
             }
-            State::Writing => {
-                // TODO: how to check buf size
+            // TODO: how to check buf size
+            State::WritingHeader => {
+                todo!("write block magic");
                 writer.write_u32(self.block_crc);
-                writer.
+            }
+            State::WritingBlock => {
+                todo!();
             }
             State::NotWriting => {}
         }
