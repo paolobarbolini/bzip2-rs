@@ -122,29 +122,23 @@ impl HuffmanTree {
             }
         } else {
             let node_index = *next_node;
-            // remove downstream bounds checking
-            assert!(node_index < nodes.len());
             *next_node += 1;
 
-            if left.len() == 1 {
-                let node = &mut nodes[node_index];
-                node.right_left[1] = HuffmanNodeState::Done(left[0].value);
+            nodes[node_index].right_left[1] = if left.len() == 1 {
+                HuffmanNodeState::Done(left[0].value)
             } else {
                 let val = Self::build_huffman_node(nodes, next_node, left, level + 1)?;
 
-                let node = &mut nodes[node_index];
-                node.right_left[1] = HuffmanNodeState::Next(val);
-            }
+                HuffmanNodeState::Next(val)
+            };
 
-            if right.len() == 1 {
-                let node = &mut nodes[node_index];
-                node.right_left[0] = HuffmanNodeState::Done(right[0].value);
+            nodes[node_index].right_left[0] = if right.len() == 1 {
+                HuffmanNodeState::Done(right[0].value)
             } else {
                 let val = Self::build_huffman_node(nodes, next_node, right, level + 1)?;
 
-                let node = &mut nodes[node_index];
-                node.right_left[0] = HuffmanNodeState::Next(val);
-            }
+                HuffmanNodeState::Next(val)
+            };
 
             Ok(node_index as u16)
         }
