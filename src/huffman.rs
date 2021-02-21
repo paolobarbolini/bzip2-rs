@@ -41,18 +41,14 @@ impl HuffmanTree {
             })
             .collect::<ArrayVec<[LengthPair; crate::LEN_258]>>();
 
-        pairs.sort_unstable_by(|a, b| {
-            a.length
-                .cmp(&b.length)
-                .then_with(|| a.value.cmp(&b.value))
-                .reverse()
-        });
+        pairs.sort_unstable_by(|a, b| a.length.cmp(&b.length).then_with(|| a.value.cmp(&b.value)));
 
         let mut code = 0u32;
         let mut length = 32u8;
 
         let mut codes = pairs
             .into_iter()
+            .rev()
             .map(|pair| {
                 length = length.min(pair.length);
 
