@@ -104,8 +104,7 @@ impl HuffmanTree {
             .find(|(_, code)| code.code & test != 0)
             .map_or(codes.len(), |(i, _)| i);
 
-        let left = &codes[..first_right_index];
-        let right = &codes[first_right_index..];
+        let (left, right) = codes.split_at(first_right_index);
 
         if left.is_empty() || right.is_empty() {
             if codes.len() < 2 {
