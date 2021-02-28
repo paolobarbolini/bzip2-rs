@@ -31,14 +31,6 @@ pub(crate) struct Block {
 
     hasher: Hasher,
     expected_crc: u32,
-
-    state: State,
-}
-
-enum State {
-    ReadyForRead,
-    Reading,
-    NotReady,
 }
 
 impl Block {
@@ -57,82 +49,32 @@ impl Block {
 
             hasher: Hasher::new(),
             expected_crc: 0,
-
-            state: State::NotReady,
         }
     }
 
-    pub fn is_ready_for_read(&self) -> bool {
-        match self.state {
-            State::ReadyForRead => true,
-            State::Reading | State::NotReady => false,
-        }
-    }
-
-    pub fn is_reading(&self) -> bool {
-        match self.state {
-            State::Reading => true,
-            State::ReadyForRead | State::NotReady => false,
-        }
-    }
-
-    pub fn is_not_ready(&self) -> bool {
-        match self.state {
-            State::NotReady => true,
-            State::ReadyForRead | State::Reading => false,
-        }
-    }
-
-    pub fn set_ready_for_read(&mut self) {
-        self.state = State::ReadyForRead;
-    }
-
-    pub fn read(
-        &mut self,
-        reader: &mut BitReader<'_>,
-        out: &mut [u8],
-    ) -> Result<usize, BlockError> {
-        match &self.state {
-            State::ReadyForRead => {
-                let magic = reader
-                    .read_u64(48)
-                    .ok_or_else(|| BlockError::new("next magic truncated"))?;
-                match magic {
-                    BLOCK_MAGIC => {
-                        self.read_block(reader)?;
-                        self.state = State::Reading;
-
-                        self.read(reader, out)
-                    }
-                    FINAL_MAGIC => {
-                        let _crc = reader
-                            .read_u32(32)
-                            .ok_or_else(|| BlockError::new("whole stream crc truncated"))?;
-
-                        // TODO: check whole stream crc
-
-                        self.state = State::NotReady;
-                        Ok(0)
-                    }
-                    _ => {
-                        self.state = State::NotReady;
-                        Err(BlockError::new("bad magic value found"))
-                    }
-                }
+    pub fn read_block(&mut self, reader: &mut BitReader<'_>) -> Result<Option<()>, BlockError> {
+        let magic = reader
+            .read_u64(48)
+            .ok_or_else(|| BlockError::new("next magic truncated"))?;
+        match magic {
+            BLOCK_MAGIC => {
+                self.do_read_block(reader)?;
+                Ok(Some(()))
             }
-            State::Reading => {
-                let n = self.read_from_block(out)?;
-                if n == 0 && !out.is_empty() {
-                    self.state = State::NotReady;
-                }
+            FINAL_MAGIC => {
+                let _crc = reader
+                    .read_u32(32)
+                    .ok_or_else(|| BlockError::new("whole stream crc truncated"))?;
 
-                Ok(n)
+                // TODO: check whole stream crc
+
+                Ok(None)
             }
-            State::NotReady => Err(BlockError::new("not ready")),
+            _ => Err(BlockError::new("bad magic value found")),
         }
     }
 
-    pub fn read_from_block(&mut self, out: &mut [u8]) -> Result<usize, BlockError> {
+    pub fn read_from_block(&mut self, out: &mut [u8]) -> usize {
         let mut read = 0;
 
         while (self.repeats > 0 || self.pre_rle_used < (self.tt.len() as u32)) && read < out.len() {
@@ -169,22 +111,20 @@ impl Block {
             read += 1;
         }
 
-        if read == 0 && !out.is_empty() {
-            self.state = State::NotReady;
-
-            let crc = self.hasher.finalize();
-            return if self.expected_crc == crc {
-                Ok(0)
-            } else {
-                Err(BlockError::new("bad crc"))
-            };
-        }
-
         self.hasher.update(&out[..read]);
-        Ok(read)
+        read
     }
 
-    pub fn read_block(&mut self, reader: &mut BitReader<'_>) -> Result<(), BlockError> {
+    pub fn check_crc(&self) -> Result<(), BlockError> {
+        let crc = self.hasher.finalize();
+        if self.expected_crc == crc {
+            Ok(())
+        } else {
+            Err(BlockError::new("bad crc"))
+        }
+    }
+
+    fn do_read_block(&mut self, reader: &mut BitReader<'_>) -> Result<(), BlockError> {
         self.hasher = Hasher::new();
         self.tt.clear();
 
@@ -433,10 +373,14 @@ mod tests {
         let mut bits = BitReader::new(&compressed);
         let mut reader = Block::new(header);
 
-        let mut out = vec![0u8; decompressed.len()];
+        reader.read_block(&mut bits).unwrap();
 
-        reader.set_ready_for_read();
-        let read = reader.read(&mut bits, &mut out).unwrap();
+        let mut out = vec![0u8; decompressed.len() * 2];
+        let read = reader.read_from_block(&mut out);
+        assert!(reader.check_crc().is_ok());
+
+        assert_eq!(reader.read_block(&mut bits), Ok(None));
+
         assert_eq!(&out[..read], decompressed.as_ref());
     }
 
@@ -453,12 +397,19 @@ mod tests {
         let mut bits = BitReader::new(&compressed);
         let mut reader = Block::new(header);
 
-        let mut out = vec![0u8; decompressed.len()];
+        reader.read_block(&mut bits).unwrap();
 
-        reader.set_ready_for_read();
-        let read1 = reader.read(&mut bits, &mut out).unwrap();
-        reader.set_ready_for_read();
-        let read2 = reader.read(&mut bits, &mut out[read1..]).unwrap();
+        let mut out = vec![0u8; decompressed.len() * 2];
+        let read1 = reader.read_from_block(&mut out);
+        assert!(reader.check_crc().is_ok());
+
+        reader.read_block(&mut bits).unwrap();
+
+        let read2 = reader.read_from_block(&mut out[read1..]);
+        assert!(reader.check_crc().is_ok());
+
+        assert_eq!(reader.read_block(&mut bits), Ok(None));
+
         assert_eq!(&out[..read1 + read2], decompressed.as_ref());
     }
 
@@ -475,10 +426,14 @@ mod tests {
         let mut bits = BitReader::new(&compressed);
         let mut reader = Block::new(header);
 
-        let mut out = vec![0u8; decompressed.len()];
+        reader.read_block(&mut bits).unwrap();
 
-        reader.set_ready_for_read();
-        let read = reader.read(&mut bits, &mut out).unwrap();
+        let mut out = vec![0u8; decompressed.len() * 2];
+        let read = reader.read_from_block(&mut out);
+        assert!(reader.check_crc().is_ok());
+
+        assert_eq!(reader.read_block(&mut bits), Ok(None));
+
         assert_eq!(&out[..read], decompressed.as_ref());
     }
 }

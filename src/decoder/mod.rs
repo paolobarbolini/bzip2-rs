@@ -74,7 +74,7 @@ pub struct Decoder {
     skip_bits: usize,
     in_buf: Vec<u8>,
 
-    eof: bool,
+    state: State,
 }
 
 /// State returned by [`Decoder::write`]
@@ -101,6 +101,14 @@ pub enum ReadState {
     Eof,
 }
 
+#[derive(Copy, Clone)]
+enum State {
+    Writing,
+    NeedsBlock,
+    Reading,
+    Eof,
+}
+
 impl Decoder {
     /// Construct a new [`Decoder`], ready to decompress a new bzip2 file
     pub fn new() -> Self {
@@ -110,18 +118,18 @@ impl Decoder {
             skip_bits: 0,
             in_buf: Vec::new(),
 
-            eof: false,
+            state: State::Writing,
         }
     }
 
     fn space(&self) -> usize {
-        match &self.header_block {
-            Some((_, block)) if block.is_reading() => 0,
-            Some((header, _)) => {
+        match (&self.header_block, self.state) {
+            (Some((header, _)), State::Writing) => {
                 let max_length = header.max_blocksize() as usize + (self.skip_bits / 8) + 1;
                 max_length - self.in_buf.len()
             }
-            None => {
+            (Some(_), _) => 0,
+            (None, _) => {
                 Header::from_raw_blocksize(1)
                     .expect("blocksize is valid")
                     .max_blocksize() as usize
@@ -137,21 +145,21 @@ impl Decoder {
     pub fn write(&mut self, buf: &[u8]) -> Result<WriteState, DecoderError> {
         let space = self.space();
 
-        match &mut self.header_block {
-            Some((_, block)) if block.is_reading() => Ok(WriteState::NeedsRead),
-            Some((header, block)) => {
+        match (&mut self.header_block, self.state) {
+            (Some((header, _)), State::Writing) => {
                 let written = space.min(buf.len());
 
                 self.in_buf.extend_from_slice(&buf[..written]);
 
-                let minimum = (self.skip_bits / 8) + header.max_blocksize() as usize;
+                let minimum = header.max_blocksize() as usize + (self.skip_bits / 8);
                 if buf.is_empty() || self.in_buf.len() >= minimum {
-                    block.set_ready_for_read();
+                    self.state = State::NeedsBlock;
                 }
 
                 Ok(WriteState::Written(written))
             }
-            None => {
+            (Some(_), _) => Ok(WriteState::NeedsRead),
+            (None, _) => {
                 let written = space.min(buf.len());
                 self.in_buf.extend_from_slice(&buf[..written]);
 
@@ -170,8 +178,8 @@ impl Decoder {
                 }
 
                 match self.write(&buf[written..])? {
-                    WriteState::NeedsRead => unreachable!(),
                     WriteState::Written(n) => Ok(WriteState::Written(n + written)),
+                    WriteState::NeedsRead => unreachable!(),
                 }
             }
         }
@@ -182,42 +190,48 @@ impl Decoder {
     /// See the documentation for [`ReadState`] to decide
     /// what to do next.
     pub fn read(&mut self, buf: &mut [u8]) -> Result<ReadState, DecoderError> {
-        match &mut self.header_block {
-            Some(_) if self.eof => Ok(ReadState::Eof),
-            Some((_, block)) if block.is_not_ready() => Ok(ReadState::NeedsWrite(self.space())),
-            Some((_, block)) => {
+        match (&mut self.header_block, self.state) {
+            (Some((_, block)), State::NeedsBlock) => {
+                // decode a new block
                 let mut reader = BitReader::new(&self.in_buf);
                 reader.advance_by(self.skip_bits);
 
-                let ready_for_read = block.is_ready_for_read();
-
-                let read = block.read(&mut reader, buf)?;
-
-                if read == 0 {
-                    if !buf.is_empty() {
-                        self.eof = ready_for_read;
-                    }
-
-                    return Ok(ReadState::NeedsWrite(self.space()));
-                }
-
-                if read == 0 && !buf.is_empty() {
-                    self.eof = true;
-                }
+                let r = block.read_block(&mut reader)?;
 
                 self.skip_bits = reader.position();
 
-                if block.is_not_ready() {
-                    let bytes = self.skip_bits / 8;
+                // drain the fully read bytes
+                let bytes = self.skip_bits / 8;
+                self.in_buf.drain(..bytes);
+                self.skip_bits -= bytes * 8;
 
-                    self.in_buf.drain(..bytes);
-
-                    self.skip_bits -= bytes * 8;
+                // set the new state
+                match r {
+                    Some(()) => {
+                        self.state = State::Reading;
+                        self.read(buf)
+                    }
+                    None => {
+                        self.state = State::Eof;
+                        Ok(ReadState::Eof)
+                    }
                 }
-
-                Ok(ReadState::Read(read))
             }
-            None => Ok(ReadState::NeedsWrite(self.space())),
+            (Some((_, block)), State::Reading) => {
+                let read = block.read_from_block(buf);
+
+                if buf.is_empty() || read != 0 {
+                    Ok(ReadState::Read(read))
+                } else {
+                    block.check_crc()?;
+
+                    self.state = State::Writing;
+                    Ok(ReadState::NeedsWrite(self.space()))
+                }
+            }
+            (Some(_), State::Writing) => Ok(ReadState::NeedsWrite(self.space())),
+            (Some(_), State::Eof) => Ok(ReadState::Eof),
+            (None, _) => Ok(ReadState::NeedsWrite(self.space())),
         }
     }
 }
