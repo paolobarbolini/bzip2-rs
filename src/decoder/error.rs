@@ -2,7 +2,7 @@ use std::error::Error as StdError;
 use std::fmt::{self, Display, Formatter};
 use std::io;
 
-use crate::block::BlockError;
+use super::block::BlockError;
 use crate::header::HeaderError;
 
 /// An error returned by [`Decoder`] or [`DecoderReader`]

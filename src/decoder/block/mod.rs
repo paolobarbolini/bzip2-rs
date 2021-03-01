@@ -422,8 +422,8 @@ mod tests {
 
     #[test]
     fn decode1() {
-        let compressed = include_bytes!("../../tests/samplefiles/sample1.bz2");
-        let decompressed = include_bytes!("../../tests/samplefiles/sample1.ref");
+        let compressed = include_bytes!("../../../tests/samplefiles/sample1.bz2");
+        let decompressed = include_bytes!("../../../tests/samplefiles/sample1.ref");
 
         let header = Header::parse(compressed[..4].try_into().unwrap()).unwrap();
         println!("block_size: {}", header.raw_blocksize());
@@ -442,8 +442,8 @@ mod tests {
 
     #[test]
     fn decode2() {
-        let compressed = include_bytes!("../../tests/samplefiles/sample2.bz2");
-        let decompressed = include_bytes!("../../tests/samplefiles/sample2.ref");
+        let compressed = include_bytes!("../../../tests/samplefiles/sample2.bz2");
+        let decompressed = include_bytes!("../../../tests/samplefiles/sample2.ref");
 
         let header = Header::parse(compressed[..4].try_into().unwrap()).unwrap();
         println!("block_size: {}", header.raw_blocksize());
@@ -464,8 +464,8 @@ mod tests {
 
     #[test]
     fn decode3() {
-        let compressed = include_bytes!("../../tests/samplefiles/sample3.bz2");
-        let decompressed = include_bytes!("../../tests/samplefiles/sample3.ref");
+        let compressed = include_bytes!("../../../tests/samplefiles/sample3.bz2");
+        let decompressed = include_bytes!("../../../tests/samplefiles/sample3.ref");
 
         let header = Header::parse(compressed[..4].try_into().unwrap()).unwrap();
         println!("block_size: {}", header.raw_blocksize());

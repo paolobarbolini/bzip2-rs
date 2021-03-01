@@ -2,12 +2,13 @@
 
 use std::convert::TryInto;
 
+use self::block::Block;
 pub use self::error::DecoderError;
 pub use self::reader::DecoderReader;
 use crate::bitreader::BitReader;
-use crate::block::Block;
 use crate::header::Header;
 
+pub mod block;
 mod error;
 mod reader;
 

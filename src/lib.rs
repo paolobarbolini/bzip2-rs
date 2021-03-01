@@ -48,12 +48,21 @@
 pub use self::decoder::DecoderReader;
 
 mod bitreader;
-pub mod block;
 mod crc;
 pub mod decoder;
 pub mod header;
 mod huffman;
 mod move_to_front;
+
+#[doc(hidden)]
+#[deprecated(note = "moved to bzip2_rs::decoder::block", since = "0.1.3")]
+pub mod block {
+    #[deprecated(
+        note = "moved to bzip2_rs::decoder::block::BlockError",
+        since = "0.1.3"
+    )]
+    pub type BlockError = crate::decoder::block::BlockError;
+}
 
 #[cfg(feature = "nightly")]
 const LEN_258: usize = 258;
