@@ -1,7 +1,11 @@
+#[cfg(feature = "nightly")]
+use std::mem::MaybeUninit;
+
 pub struct Hasher {
     // CRC32B hasher
     val: crc32fast::Hasher,
     // reversed bits
+    #[cfg(not(feature = "nightly"))]
     bytes: [u8; 512],
 }
 
@@ -9,17 +13,26 @@ impl Hasher {
     pub fn new() -> Self {
         Self {
             val: crc32fast::Hasher::new(),
+            #[cfg(not(feature = "nightly"))]
             bytes: [0; 512],
         }
     }
 
-    pub fn update(&mut self, mut bytes: &[u8]) {
-        while !bytes.is_empty() {
-            let len = bytes.len().min(self.bytes.len());
-            self.bytes[..len].copy_from_slice(&bytes[..len]);
-            bytes = &bytes[len..];
+    pub fn update(&mut self, mut buf: &[u8]) {
+        #[cfg(feature = "nightly")]
+        let mut bytes = [MaybeUninit::<u8>::uninit(); 512];
+        #[cfg(not(feature = "nightly"))]
+        let bytes = &mut self.bytes;
 
-            for byte in self.bytes.iter_mut() {
+        while !buf.is_empty() {
+            let len = buf.len().min(bytes.len());
+            #[cfg(feature = "nightly")]
+            let bytes = MaybeUninit::write_slice(&mut bytes[..len], &buf[..len]);
+            #[cfg(not(feature = "nightly"))]
+            bytes[..len].copy_from_slice(&buf[..len]);
+            buf = &buf[len..];
+
+            for byte in bytes.iter_mut() {
                 #[cfg(feature = "rustc_1_37")]
                 {
                     *byte = byte.reverse_bits();
@@ -32,7 +45,7 @@ impl Hasher {
                     *byte = (*byte & 0xAA) >> 1 | (*byte & 0x55) << 1;
                 }
             }
-            self.val.update(&self.bytes[..len]);
+            self.val.update(&bytes[..len]);
         }
     }
 
