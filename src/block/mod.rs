@@ -172,7 +172,7 @@ impl Block {
         if read == 0 && !out.is_empty() {
             self.state = State::NotReady;
 
-            let crc = self.hasher.finalyze();
+            let crc = self.hasher.finalize();
             return if self.expected_crc == crc {
                 Ok(0)
             } else {

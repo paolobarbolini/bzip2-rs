@@ -36,7 +36,7 @@ impl Hasher {
         }
     }
 
-    pub fn finalyze(&self) -> u32 {
+    pub fn finalize(&self) -> u32 {
         let reversed = self.val.clone().finalize();
         // CRC32B to CRC32
         #[cfg(feature = "rustc_1_37")]
@@ -63,6 +63,6 @@ mod tests {
     fn crc() {
         let mut hasher = Hasher::new();
         hasher.update(b"123456789");
-        assert_eq!(hasher.finalyze(), 0xFC891918);
+        assert_eq!(hasher.finalize(), 0xFC891918);
     }
 }
