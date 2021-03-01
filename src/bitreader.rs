@@ -100,14 +100,14 @@ impl<'a> Iterator for BitReader<'a> {
     }
 }
 
-/// A bitreader which can read at most 57 bits, but is faster on systems
+/// A bitreader which can read at most 64 bits, but is faster on systems
 /// with 64 bit registers.
 /// NOTE: a few points are assumed by this bitreader
 ///
 /// * `<CachedBitReader as Iterator>::next` will never yield `None`, even after
-///   the guaranteed to be valid 57 bits have been exhausted.
-/// * The soft limit on 57 bits can be reset by calling `CachedBitReader::refresh`
-/// * At least 8 bytes must be available in the `BitReader` passed to `CachedBitReader::refresh`
+///   the guaranteed to be valid 64 bits have been exhausted.
+/// * The soft limit on 64 bits can be reset by calling `CachedBitReader::refresh`
+/// * At least 9 bytes must be available in the `BitReader` passed to `CachedBitReader::refresh`
 /// * If `<CachedBitReader as Iterator>::next` may have been called at least one time,
 ///   `CachedBitReader::restore` must be called in order to update the `BitReader::position`
 /// * `CachedBitReader::restore` must be called before calling `CachedBitReader::refresh`,
@@ -128,10 +128,16 @@ impl CachedBitReader {
 
     pub fn refresh(&mut self, reader: &BitReader<'_>) -> Option<()> {
         let pos = reader.position / 8;
-        let data = reader.bytes.get(pos..pos + 8)?;
+        let data = reader.bytes.get(pos..pos + 9)?;
 
-        self.cache = u64::from_be_bytes(data.try_into().unwrap());
-        self.cache <<= reader.position % 8;
+        let mut b1 = u64::from_be_bytes(data[..8].try_into().unwrap());
+        b1 <<= reader.position % 8;
+
+        let mut b2 = u16::from_be_bytes(data[7..9].try_into().unwrap());
+        b2 <<= reader.position % 8;
+        b2 >>= 8;
+
+        self.cache = b1 | u64::from(b2);
         self.read = 0;
         Some(())
     }
@@ -141,7 +147,7 @@ impl CachedBitReader {
     }
 
     pub fn overflowed(&self) -> bool {
-        self.read() > 57
+        self.read() > 64
     }
 
     pub fn restore(&mut self, reader: &mut BitReader<'_>, read: usize) {
