@@ -139,9 +139,6 @@ impl PositionalMTFEncoder {
 
             insert_pending_zeros!();
 
-            println!("{:?}", live_mtf);
-
-            // TODO: nightly has rotate_right?
             // [0..loc] transformed to [loc; 0..loc-1]
             let mut loc = 1;
             let mut assignee = live_mtf[loc - 1];
@@ -154,7 +151,6 @@ impl PositionalMTFEncoder {
             live_mtf[loc] = assignee;
             live_mtf[0] = index;
 
-            println!("{:?} {}", live_mtf, loc);
             insert_selector!(loc as u16 + 1);
         }
 
