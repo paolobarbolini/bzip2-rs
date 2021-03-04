@@ -51,7 +51,7 @@ mod bitreader;
 mod block_common;
 mod crc;
 pub mod decoder;
-pub mod encoder;
+// pub mod encoder;
 pub mod header;
 mod huffman;
 mod move_to_front;

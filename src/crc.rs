@@ -69,9 +69,6 @@ impl Hasher {
 
     pub fn reset(&mut self) {
         self.val.reset();
-        for x in self.bytes.iter_mut() {
-            *x = 0;
-        }
     }
 }
 
