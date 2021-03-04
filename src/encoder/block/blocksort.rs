@@ -435,7 +435,7 @@ fn main_sort(
     ptr: &mut [u32],
     block: &mut [char],
     quadrant: &mut [u16],
-    ftab: &mut [u32; TWO_BYTE_RANGE],
+    ftab: &mut [usize; TWO_BYTE_RANGE],
     nblock: usize,
     budget: &mut i32,
 ) -> bool {
@@ -449,31 +449,31 @@ fn main_sort(
     }
 
     let mut j = ((block[0] as u16) << 8) as u32;
-    let mut i = (nblock - 1) as isize;
+    let mut i = nblock - 1;
 
     while i >= 3 {
-        quadrant[(i - 0) as usize] = 0;
-        j = (j >> 8) | ((block[(i - 0) as usize] as u16) << 8) as u32;
+        quadrant[i - 0] = 0;
+        j = (j >> 8) | ((block[i - 0] as u16) << 8) as u32;
         ftab[j as usize] += 1;
 
-        quadrant[(i - 1) as usize] = 0;
-        j = (j >> 8) | ((block[(i - 1) as usize] as u16) << 8) as u32;
+        quadrant[i - 1] = 0;
+        j = (j >> 8) | ((block[i - 1] as u16) << 8) as u32;
         ftab[j as usize] += 1;
 
-        quadrant[(i - 2) as usize] = 0;
-        j = (j >> 8) | ((block[(i - 2) as usize] as u16) << 8) as u32;
+        quadrant[i - 2] = 0;
+        j = (j >> 8) | ((block[i - 2] as u16) << 8) as u32;
         ftab[j as usize] += 1;
 
-        quadrant[(i - 3) as usize] = 0;
-        j = (j >> 8) | ((block[(i - 3) as usize] as u16) << 8) as u32;
+        quadrant[i - 3] = 0;
+        j = (j >> 8) | ((block[i - 3] as u16) << 8) as u32;
         ftab[j as usize] += 1;
 
         i -= 4;
     }
 
     while i >= 0 {
-        quadrant[i as usize] = 0;
-        j = (j >> 8) | ((block[i as usize] as u16) << 8) as u32;
+        quadrant[i] = 0;
+        j = (j >> 8) | ((block[i] as u16) << 8) as u32;
         ftab[j as usize] += 1;
         i -= 1;
     }
@@ -488,24 +488,25 @@ fn main_sort(
     }
 
     let mut s = (block[0] as u16) << 8;
-    let mut i = (nblock - 1) as isize;
+    let mut i = nblock - 1;
+
     while i >= 3 {
-        s = (s >> 8) | ((block[i as usize - 0] as u16) << 8);
+        s = (s >> 8) | ((block[i - 0] as u16) << 8);
         let j = ftab[s as usize] - 1;
         ftab[s as usize] = j;
         ptr[j as usize] = i as u32 - 0;
 
-        s = (s >> 8) | ((block[i as usize - 1] as u16) << 8);
+        s = (s >> 8) | ((block[i - 1] as u16) << 8);
         let j = ftab[s as usize] - 1;
         ftab[s as usize] = j;
         ptr[j as usize] = i as u32 - 1;
 
-        s = (s >> 8) | ((block[i as usize - 3] as u16) << 8);
+        s = (s >> 8) | ((block[i - 2] as u16) << 8);
         let j = ftab[s as usize] - 1;
         ftab[s as usize] = j;
         ptr[j as usize] = i as u32 - 2;
 
-        s = (s >> 8) | ((block[i as usize - 3] as u16) << 8);
+        s = (s >> 8) | ((block[i - 3] as u16) << 8);
         let j = ftab[s as usize] - 1;
         ftab[s as usize] = j;
         ptr[j as usize] = i as u32 - 3;
@@ -514,7 +515,7 @@ fn main_sort(
     }
 
     while i >= 0 {
-        s = (s >> 8) | ((block[i as usize] as u16) << 8);
+        s = (s >> 8) | ((block[i] as u16) << 8);
         let j = ftab[s as usize] - 1;
         ftab[s as usize] = j;
         ptr[j as usize] = i as u32;
@@ -527,10 +528,11 @@ fn main_sort(
        big bucket.
     --*/
     let mut big_done = vec![false; BYTE_RANGE];
-    let mut running_order: Vec<i32> = (0..BYTE_RANGE).collect();
+    let mut running_order: Vec<usize> = (0..BYTE_RANGE).collect();
 
     {
-        fn big_freq(ftab: &mut [u32], b: usize) -> u32 {
+        // TODO: what if the subtraction is negative?
+        fn big_freq(ftab: &mut [usize], b: usize) -> usize {
             ftab[(b + 1) << 8] - ftab[b << 8]
         }
 
@@ -546,7 +548,7 @@ fn main_sort(
 
                 let mut leave_loop = false;
 
-                while big_freq(ftab, j - h) > big_freq(ftab, vv as usize) {
+                while big_freq(ftab, j - h) > big_freq(ftab, vv) {
                     running_order[j] = running_order[j - h];
                     j -= h;
 
@@ -561,7 +563,8 @@ fn main_sort(
                 }
             }
 
-            running_order[j as usize] = vv;
+            // TODO: check if this `j` is the intended indexer
+            running_order[j] = vv;
         }
     }
 
@@ -591,9 +594,10 @@ fn main_sort(
         for j in 0..256 {
             if j != ss {
                 let sb = (ss << 8) + j;
-                if ftab[sb as usize] & SETMASK == 0 {
-                    let lo = (ftab[sb as usize] & CLEARMASK) as usize;
-                    let hi = (ftab[sb as usize + 1] & CLEARMASK) as usize - 1;
+                if ftab[sb] & SETMASK == 0 {
+                    let lo = (ftab[sb] & CLEARMASK);
+                    // TODO: check never negative
+                    let hi = (ftab[sb + 1] & CLEARMASK) - 1;
 
                     if hi > lo {
                         main_qsort3(ptr, block, quadrant, nblock, lo, hi, BZ_N_RADIX, budget);
@@ -603,11 +607,11 @@ fn main_sort(
                         }
                     }
                 }
-                ftab[sb as usize] |= SETMASK;
+                ftab[sb] |= SETMASK;
             }
         }
 
-        assert!(!big_done[ss as usize]);
+        assert!(!big_done[ss]);
 
         /*--
            Step 2:
@@ -620,13 +624,13 @@ fn main_sort(
             let mut copy_start = [0; BYTE_RANGE];
             let mut copy_end = [0; BYTE_RANGE];
 
-            for (j, (start, end)) in copy_start.iter().zip(copy_end.iter()).enumerate() {
-                *start = ftab[(j << 8) + ss as usize] & CLEARMASK;
-                *end = (ftab[(j << 8) + ss as usize + 1] & CLEARMASK) - 1;
+            for (j, (start, end)) in copy_start.iter_mut().zip(copy_end.iter_mut()).enumerate() {
+                *start = ftab[(j << 8) + ss] & CLEARMASK;
+                *end = (ftab[(j << 8) + ss + 1] & CLEARMASK) - 1;
             }
 
-            for j in (ftab[(ss as usize) << 8] & CLEARMASK)..(copy_start[ss as usize]) {
-                let mut k = ptr[j as usize] as isize - 1;
+            for j in (ftab[ss << 8] & CLEARMASK)..(copy_start[ss]) {
+                let mut k = ptr[j] as isize - 1;
                 if k < 0 {
                     k += nblock as isize;
                 }
@@ -638,8 +642,8 @@ fn main_sort(
                 }
             }
 
-            for j in (ftab[((ss + 1) as usize) << 8] & CLEARMASK - 1)..(copy_end[ss as usize]) {
-                let mut k = ptr[j as usize] as isize - 1;
+            for j in (ftab[(ss + 1) << 8] & CLEARMASK - 1)..(copy_end[ss]) {
+                let mut k = ptr[j] as isize - 1;
                 if k < 0 {
                     k += nblock as isize;
                 }
@@ -653,19 +657,19 @@ fn main_sort(
             }
 
             assert!(
-                copy_start[ss as usize] - 1 == copy_end[ss as usize]
-                /* Extremely rare case missing in bzip2-1.0.0 and 1.0.1.
-                   Necessity for this case is demonstrated by compressing
-                   a sequence of approximately 48.5 million of character
-                   251; 1.0.0/1.0.1 will then die here.
-                 */
-                    || (copy_start[ss as usize] == 0
-                        && copy_end[ss as usize] == (nblock as u32 - 1))
+                copy_start[ss] - 1 == copy_end[ss]
+                    /* Extremely rare case missing in bzip2-1.0.0 and 1.0.1.
+                       Necessity for this case is demonstrated by compressing
+                       a sequence of approximately 48.5 million of character
+                       251; 1.0.0/1.0.1 will then die here.
+                     */
+                    || (copy_start[ss] == 0
+                    && copy_end[ss] == (nblock as u32 - 1))
             );
         }
 
         for j in 0..BYTE_RANGE {
-            ftab[(j << 8) + ss as usize] |= SETMASK;
+            ftab[(j << 8) + ss] |= SETMASK;
         }
 
         /*--
@@ -708,11 +712,13 @@ fn main_sort(
                  }
         --*/
 
-        big_done[ss as usize] = true;
+        big_done[ss] = true;
 
         if i < 255 {
-            let bb_start = (ftab[(ss as usize) << 8] & CLEARMASK) as usize;
-            let bb_size = (ftab[(ss as usize + 1) << 8] & CLEARMASK) as usize - bb_start;
+            // TODO: this bitwise & with these two variables repeats a lot
+            // might be able to optimize this code duplication
+            let bb_start = (ftab[ss << 8] & CLEARMASK);
+            let bb_size = (ftab[(ss + 1) << 8] & CLEARMASK) - bb_start;
 
             let mut shifts = 0;
 
@@ -749,7 +755,7 @@ fn main_sort(
       ftab [ 0 .. 65536 ] destroyed
       arr1 [0 .. nblock-1] holds sorted order
 */
-pub fn block_sort(buf: &[u8], ftab: &mut [u32; TWO_BYTE_RANGE], workFactor: u8) {
+pub fn block_sort(buf: &[u8], ftab: &mut [u32; TWO_BYTE_RANGE], work_factor: u8) {
     const LOWER_LIMIT: usize = 100000;
     let mut use_fallback = true;
 
@@ -761,8 +767,8 @@ pub fn block_sort(buf: &[u8], ftab: &mut [u32; TWO_BYTE_RANGE], workFactor: u8) 
 
         let quadrant = &buf[i];
 
-        let budgetInit = buf.len() * ((workFactor - 1) / 3) as usize;
-        let budget = budgetInit;
+        let budget_init = buf.len() * ((work_factor - 1) / 3) as usize;
+        let budget = budget_init;
 
         let passed = main_sort(buf, quadrant, ftab, buf.len(), budget);
 

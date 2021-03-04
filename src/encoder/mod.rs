@@ -1,11 +1,15 @@
 //! bzip2 encoding APIs
 
-pub use self::error::EncoderError;
-use crate::encblock::Block;
-use crate::header::Header;
 use std::convert::TryFrom;
 
+use block::Block;
+
+use crate::header::Header;
+
+pub use self::error::EncoderError;
+
 mod error;
+pub mod block;
 
 /// Low level compressor implementation
 ///
@@ -46,10 +50,11 @@ enum State {
 
 impl Compressor {
     /// Create [`Compressor`] with custom blocksize
-    pub fn new(raw_blocksize: u8, work_factor: u8) -> Self {
+    pub fn new(raw_blocksize: u8, mut work_factor: u8) -> Self {
         if work_factor > 250 {
             work_factor = 250;
         }
+
         if work_factor == 0 {
             work_factor = 30;
         }

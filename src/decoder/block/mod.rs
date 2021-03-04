@@ -410,6 +410,8 @@ impl Block {
 
         Ok(())
     }
+
+    // pub fn write(&mut self, writer: &mut BitWriter<'_>, out: &mut [u8]) {}
 }
 
 #[cfg(test)]
