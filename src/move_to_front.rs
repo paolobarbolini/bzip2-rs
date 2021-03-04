@@ -20,12 +20,12 @@ impl MoveToFrontDecoder {
     pub fn decode(&mut self, n: u8) -> u8 {
         let b = self.symbols[usize::from(n)];
         #[cfg(feature = "rustc_1_37")]
-            self.symbols.copy_within(..usize::from(n), 1);
+        self.symbols.copy_within(..usize::from(n), 1);
         #[cfg(not(feature = "rustc_1_37"))]
-            {
-                let symbols = self.symbols;
-                self.symbols[1..=usize::from(n)].copy_from_slice(&symbols[..usize::from(n)]);
-            }
+        {
+            let symbols = self.symbols;
+            self.symbols[1..=usize::from(n)].copy_from_slice(&symbols[..usize::from(n)]);
+        }
         self.symbols[0] = b;
 
         b
@@ -120,7 +120,7 @@ impl PositionalMTFEncoder {
                     index_zero_freq = 0;
                 }
             };
-        };
+        }
 
         for i in 0..nblock {
             let j = if ptr[i] < 1 {
@@ -244,8 +244,17 @@ mod encoder_tests {
     #[test]
     fn encode_repeating_large() {
         let buf = b"972938M0o1Dwy5T4afiCDM1sJ227jot92F35cJwpivOOK13yvPOEdI177zxQVk82N1SWK1e962xPngky02445blwn9mEz3T3LCwW";
-        let answer = [10, 9, 5, 3, 6, 10, 19, 7, 41, 9, 14, 46, 48, 14, 28, 15, 31, 36, 38, 20, 10, 14, 12, 45, 25, 20, 0, 21, 40, 18, 46, 23, 6, 26, 24, 20, 38, 11, 23, 46, 19, 47, 34, 0, 32, 19, 11, 27, 6, 35, 7, 32, 41, 34, 9, 23, 0, 49, 49, 39, 41, 46, 38, 25, 41, 10, 42, 43, 21, 4, 45, 30, 43, 9, 14, 21, 49, 47, 15, 25, 45, 8, 44, 0, 34, 47, 48, 34, 11, 15, 49, 30, 27, 33, 48, 2, 49, 47, 10, 26, 50];
-        let mtf_freq = [4, 0, 1, 1, 1, 1, 3, 2, 1, 4, 5, 3, 1, 0, 4, 3, 0, 0, 1, 3, 3, 3, 0, 3, 1, 3, 2, 2, 1, 0, 2, 1, 2, 1, 4, 1, 1, 0, 3, 1, 1, 4, 1, 2, 1, 3, 4, 4, 3, 5, 1];
+        let answer = [
+            10, 9, 5, 3, 6, 10, 19, 7, 41, 9, 14, 46, 48, 14, 28, 15, 31, 36, 38, 20, 10, 14, 12,
+            45, 25, 20, 0, 21, 40, 18, 46, 23, 6, 26, 24, 20, 38, 11, 23, 46, 19, 47, 34, 0, 32,
+            19, 11, 27, 6, 35, 7, 32, 41, 34, 9, 23, 0, 49, 49, 39, 41, 46, 38, 25, 41, 10, 42, 43,
+            21, 4, 45, 30, 43, 9, 14, 21, 49, 47, 15, 25, 45, 8, 44, 0, 34, 47, 48, 34, 11, 15, 49,
+            30, 27, 33, 48, 2, 49, 47, 10, 26, 50,
+        ];
+        let mtf_freq = [
+            4, 0, 1, 1, 1, 1, 3, 2, 1, 4, 5, 3, 1, 0, 4, 3, 0, 0, 1, 3, 3, 3, 0, 3, 1, 3, 2, 2, 1,
+            0, 2, 1, 2, 1, 4, 1, 1, 0, 3, 1, 1, 4, 1, 2, 1, 3, 4, 4, 3, 5, 1,
+        ];
         check_mtfe(buf, &answer, &mtf_freq);
     }
 }
