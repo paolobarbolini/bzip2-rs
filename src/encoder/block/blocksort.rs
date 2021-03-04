@@ -1,4 +1,5 @@
 use std::cmp::{max, min};
+use std::arch::x86_64::_mm512_mask_cmp_round_pd_mask;
 
 const N_RADIX: usize = 2;
 const N_QSORT: usize = 12;
@@ -153,12 +154,105 @@ fn fallback_qsort_3(fmap: &mut [u32], eclass: &[u32], lo_st: usize, hi_st: usize
 ///    All other areas of eclass destroyed
 ///    fmap [0 .. nblock-1] holds sorted order
 ///    bhtab [ 0 .. 2+(nblock/32) ] destroyed
-fn fallback_sort(fmap: &mut [u32], eclass: &[u32], bhtab: &[u32], nblock: i32, verb: i32) {
-    // let ftab: Vec<i32> = Vec::with_capacity(257);
-    // let ftab_copy: Vec<i32> = Vec::with_capacity(256);
+fn fallback_sort(fmap: &mut [u32], eclass: &[u32], bhtab: &mut [usize; TWO_BYTE_RANGE], nblock: i32, verb: i32) {
+    /*--
+       Initial 1-char radix sort to generate
+       initial fmap and initial BH bits.
+    --*/
 
-    //     UChar* eclass8 = (UChar*)eclass;
-    todo!("Somehow figure out a way to interpret &[u32] as &[u8] as well");
+    // TODO: keep the index 256 in a separate variable
+    // (so that it might help in caching?)
+    let mut ftab: Vec<i32> = vec![0; BYTE_RANGE + 1];
+
+    for i in 0..nblock {
+        ftab[eclass[i]] += 1;
+    }
+
+    let ftab_copy = ftab[0..BYTE_RANGE].collect();
+    for i in 1..=BYTE_RANGE {
+        ftab[i] += ftab[i - 1];
+    }
+
+    for i in 0..nblock {
+        let j = eclass[i];
+        let k = ftab[j] - 1;
+        ftab[j] = k;
+        ftab[k] = i;
+    }
+
+    let nbhtab = 2 + (nblock / 32);
+
+    for i in 0..nbhtab {
+        bhtab[i] = 0;
+    }
+
+    macro_rules! set_bh {
+        ($pos: expr) => {
+           bhtab[$pos >> 5] |= 1 << ($pos & 31);
+        };
+    }
+
+    macro_rules! clear_bh {
+        ($pos: expr) => {
+            bhtab[$pos >> 5] &= ~(1 << ($pos & 31));
+        };
+    }
+
+    for i in 0..BYTE_RANGE {
+        set_bh!(ftab[i]);
+    }
+
+    /*--
+       Inductively refine the buckets.  Kind-of an
+       "exponential radix sort" (!), inspired by the
+       Manber-Myers suffix array construction algorithm.
+    --*/
+
+    /*-- set sentinel bits for block-end detection --*/
+    for i in 0..32 {
+        set_bh!(nblock + 2 * i);
+        clear_bh!(nblock + 2 * i + 1);
+    }
+
+    macro_rules! isset_bh {
+        ($pos: expr) => {
+            bhtab[$pos >> 5] & (1 << ($pos & 31))
+        };
+    }
+
+    macro_rules! unaligned_bh {
+        () => {};
+    }
+
+    /*-- the log(N) loop --*/
+    let H = 1;
+    loop {
+        let mut j = 0;
+
+        for i in 0..nblock {
+            if isset_bh!(i) {
+                j = i;
+            }
+
+            let mut k = fmap[i] - H;
+
+            if k < 0 {
+                k += nblock;
+            }
+
+            eclass[k] = j;
+        }
+
+        let nNotDone = false;
+        let r = -1;
+
+        loop {
+            /*-- find the next non-singleton bucket --*/
+            let mut k = r + 1;
+        }
+    }
+
+    todo!("All the bh functions can be most likely combined in a separate struct for clarity");
 }
 
 /// The main, O(N^2 log(N)) sorting algorithm.
@@ -171,7 +265,8 @@ fn main_gt_u(
     nblock: usize,
     budget: &mut i32,
 ) -> bool {
-    assert!(i1 != i2, "main_gt_u");
+    assert_ne!(i1, i2, "main_gt_u");
+
     let (mut i1, mut i2) = (i1, i2);
 
     for _ in 0..12 {
@@ -755,7 +850,7 @@ fn main_sort(
       ftab [ 0 .. 65536 ] destroyed
       arr1 [0 .. nblock-1] holds sorted order
 */
-pub fn block_sort(buf: &[u8], ftab: &mut [u32; TWO_BYTE_RANGE], work_factor: u8) {
+pub fn block_sort(ptr: &mut [u32], buf: &[u8], ftab: &mut [usize; TWO_BYTE_RANGE], work_factor: u8) {
     const LOWER_LIMIT: usize = 100000;
     let mut use_fallback = true;
 
@@ -767,10 +862,10 @@ pub fn block_sort(buf: &[u8], ftab: &mut [u32; TWO_BYTE_RANGE], work_factor: u8)
 
         let quadrant = &buf[i];
 
-        let budget_init = buf.len() * ((work_factor - 1) / 3) as usize;
-        let budget = budget_init;
+        let budget_init = buf.len() * ((work_factor - 1) / 3);
+        let mut budget = i32::from(budget_init);
 
-        let passed = main_sort(buf, quadrant, ftab, buf.len(), budget);
+        let passed = true; // TODO: main_sort(ptr, buf, quadrant, ftab, buf.len(), &mut budget);
 
         if passed {
             use_fallback = false;
@@ -778,6 +873,7 @@ pub fn block_sort(buf: &[u8], ftab: &mut [u32; TWO_BYTE_RANGE], work_factor: u8)
     }
 
     if use_fallback {
-        fallback_sort();
+        // TODO:
+        // fallback_sort(ftab);
     }
 }

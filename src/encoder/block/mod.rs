@@ -91,7 +91,6 @@ impl Block {
     /// (uptil the huffman tables and selectors list)
     fn compress_buffer(&mut self) {
         todo!();
-        blocksort::block_sort();
     }
 
     pub fn write(&mut self, writer: &mut BitWriter<'_>) -> usize {
