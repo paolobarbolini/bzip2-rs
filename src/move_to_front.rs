@@ -203,9 +203,10 @@ mod decoder_tests {
 mod encoder_tests {
     use super::*;
 
-    fn vector_equals<T: Copy + Eq>(a: &[T], b: &[T]) -> bool {
+    fn vector_equals<T: Copy + Eq>(a: &[T], b: &[T]) {
         let count = a.iter().zip(b).filter(|&(x, y)| x == y).count();
-        count == a.len() && count == b.len()
+        assert_eq!(count, a.len());
+        assert_eq!(count, b.len());
     }
 
     fn check_mtfe(buf: &[u8], answer: &[u16], mtf_freq: &[usize]) {
@@ -220,8 +221,8 @@ mod encoder_tests {
         let mut mtfe = PositionalMTFEncoder::new();
         mtfe.encode(nblock, buf, &ptr, &in_use);
 
-        assert!(vector_equals(&answer, &mtfe.selectors));
-        assert!(vector_equals(&mtf_freq, &mtfe.mtf_freq));
+        vector_equals(&answer, &mtfe.selectors);
+        vector_equals(&mtf_freq, &mtfe.mtf_freq);
     }
 
     #[test]
