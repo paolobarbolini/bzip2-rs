@@ -14,6 +14,7 @@ fn empty() {
 }
 
 #[test]
+#[cfg(feature = "nightly")]
 fn bad_num_selectors() {
     // Too high number of selectors causing ArrayVec::set_len to panic
     let compressed: &[u8] = &[
