@@ -37,7 +37,7 @@
     clippy::cast_lossless,
     clippy::doc_markdown,
     missing_docs,
-    rustdoc::broken_intra_doc_links
+    broken_intra_doc_links
 )]
 #![forbid(unsafe_code)]
 // TODO: remove once rustc 1.35 is our MSRV
