@@ -213,19 +213,19 @@ impl Block {
             return Err(BlockError::new("invalid number of huffman trees"));
         }
 
-        let selectors_used = reader
+        let num_selectors = reader
             .read_u16(15)
             .ok_or_else(|| BlockError::new("selectors used truncated"))?;
 
         #[cfg(feature = "nightly")]
-        let mut selectors_list = ArrayVec::<[u8; 18001]>::new();
+        let mut reverse_selectors = ArrayVec::<[u8; 18001]>::new();
         #[cfg(feature = "nightly")]
-        selectors_list.set_len(usize::from(selectors_used));
+        reverse_selectors.set_len(usize::from(num_selectors));
         #[cfg(not(feature = "nightly"))]
-        let mut selectors_list = vec![0u8; usize::from(selectors_used)];
+        let mut reverse_selectors = vec![0u8; usize::from(num_selectors)];
 
-        let mut move_to_front_decoder = MoveToFrontDecoder::new();
-        for selector_item in selectors_list.iter_mut().rev() {
+        let mut selectors_decoder = MoveToFrontDecoder::new();
+        for selector in reverse_selectors.iter_mut().rev() {
             let mut trees = 0;
 
             while reader
@@ -239,7 +239,7 @@ impl Block {
                 }
             }
 
-            *selector_item = move_to_front_decoder.decode(trees);
+            *selector = selectors_decoder.decode(trees);
         }
 
         let mut huffman_trees = ArrayVec::<[HuffmanTree; 6]>::new();
@@ -282,7 +282,7 @@ impl Block {
             huffman_trees.push(tree);
         }
 
-        let selector = selectors_list
+        let selector = reverse_selectors
             .pop()
             .ok_or_else(|| BlockError::new("no tree selectors given"))?;
         let mut current_huffman_tree = huffman_trees
@@ -299,7 +299,7 @@ impl Block {
             .ok_or_else(|| BlockError::new("huffman bitstream truncated"))?;
         loop {
             if decoded == 50 {
-                let selector = selectors_list.pop().ok_or_else(|| {
+                let selector = reverse_selectors.pop().ok_or_else(|| {
                     BlockError::new("insufficient selector indices for number of symbols")
                 })?;
 
