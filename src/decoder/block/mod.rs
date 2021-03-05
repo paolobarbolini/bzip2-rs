@@ -203,32 +203,8 @@ impl Block {
             .read_u32(24)
             .ok_or_else(|| BlockError::new("orig ptr truncated"))?;
 
-        let mut huffman_used_symbols = ArrayVec::<[u8; 16]>::new();
-        let mut huffman_used_bitmaps = ArrayVec::<[u8; 256]>::new();
-
-        for i in 0..16 {
-            if reader
-                .read_bool()
-                .ok_or_else(|| BlockError::new("symbol range truncated"))?
-            {
-                huffman_used_symbols.push(i);
-            }
-        }
-
-        for symbol_range in huffman_used_symbols {
-            for symbol in 0..16 {
-                if reader
-                    .read_bool()
-                    .ok_or_else(|| BlockError::new("symbol range truncated"))?
-                {
-                    huffman_used_bitmaps.push(symbol_range * 16 + symbol);
-                }
-            }
-        }
-
-        if huffman_used_bitmaps.is_empty() {
-            return Err(BlockError::new("huffman no symbols in input"));
-        }
+        let (mut huffman_decoder, alpha_size) =
+            MoveToFrontDecoder::read_from_block(reader).map_err(BlockError::new)?;
 
         let huffman_groups = reader
             .read_u8(3)
@@ -266,15 +242,10 @@ impl Block {
             *selector_item = move_to_front_decoder.decode(trees);
         }
 
-        // limited in lenght of huffman_used_symbols
-        let mut symbols = [0u8; 256];
-        symbols[..huffman_used_bitmaps.len()].copy_from_slice(&huffman_used_bitmaps);
-        let mut move_to_front_decoder_2 = MoveToFrontDecoder::new_from_symbols(symbols);
-
         let mut huffman_trees = ArrayVec::<[HuffmanTree; 6]>::new();
 
         let mut lengths = ArrayVec::<[u8; crate::LEN_258]>::new();
-        lengths.set_len(huffman_used_bitmaps.len() + 2);
+        lengths.set_len(alpha_size);
 
         for _ in 0..huffman_groups {
             let mut length = reader
@@ -378,18 +349,18 @@ impl Block {
                     return Err(BlockError::new("repeats past end of block"));
                 }
 
-                let b = move_to_front_decoder_2.first();
+                let b = huffman_decoder.first();
                 // extend self.tt with `b` repeated `old_repeat` times
                 let new_len = self.tt.len() + old_repeat as usize;
                 self.tt.resize(new_len, u32::from(b));
                 c[usize::from(b)] += old_repeat;
             }
 
-            if usize::from(v) == (huffman_used_bitmaps.len() + 2) - 1 {
+            if usize::from(v) == (alpha_size) - 1 {
                 break;
             }
 
-            let b = move_to_front_decoder_2.decode((v - 1) as u8);
+            let b = huffman_decoder.decode((v - 1) as u8);
             if self.tt.len() >= self.header.max_blocksize() as usize {
                 return Err(BlockError::new("data exceeds block size"));
             }
