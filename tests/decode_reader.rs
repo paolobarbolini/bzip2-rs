@@ -14,6 +14,22 @@ fn empty() {
 }
 
 #[test]
+fn bad_num_selectors() {
+    // Too high number of selectors causing ArrayVec::set_len to panic
+    let compressed: &[u8] = &[
+        66, 90, 104, 52, 49, 65, 89, 38, 83, 89, 1, 0, 0, 0, 91, 90, 66, 104, 0, 56, 50, 65, 175,
+        0, 0, 105, 255, 255,
+    ];
+
+    let mut reader = DecoderReader::new(compressed);
+
+    let mut buf = [0; 1024];
+    let err = reader.read(&mut buf).unwrap_err();
+    assert_eq!(err.kind(), io::ErrorKind::Other);
+    assert_eq!(err.to_string(), "too high value for num_selectors");
+}
+
+#[test]
 fn trees_overflow() {
     // Reported in #1
     let compressed: &[u8] = &[

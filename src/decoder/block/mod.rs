@@ -220,7 +220,12 @@ impl Block {
         #[cfg(feature = "nightly")]
         let mut reverse_selectors = ArrayVec::<[u8; 18001]>::new();
         #[cfg(feature = "nightly")]
-        reverse_selectors.set_len(usize::from(num_selectors));
+        {
+            if num_selectors > 18001 {
+                return Err(BlockError::new("too high value for num_selectors"));
+            }
+            reverse_selectors.set_len(usize::from(num_selectors));
+        }
         #[cfg(not(feature = "nightly"))]
         let mut reverse_selectors = vec![0u8; usize::from(num_selectors)];
 
