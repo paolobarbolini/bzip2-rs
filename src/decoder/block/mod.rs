@@ -16,7 +16,7 @@ use crate::move_to_front::MoveToFrontDecoder;
 mod bwt;
 mod error;
 
-const BLOCK_MAGIC: u64 = 0x314159265359;
+pub(crate) const BLOCK_MAGIC: u64 = 0x314159265359;
 const FINAL_MAGIC: u64 = 0x177245385090;
 
 pub(crate) struct Block {
