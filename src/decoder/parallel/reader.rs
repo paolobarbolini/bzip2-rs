@@ -40,7 +40,7 @@ use super::{ParallelDecoder, ReadState, ThreadPool};
 /// # }
 /// # let mut output = Vec::new();
 ///
-/// let mut reader = ParallelDecoderReader::new(RayonThreadPool, 1024 * 1024, compressed_file);
+/// let mut reader = ParallelDecoderReader::new(compressed_file, RayonThreadPool, 1024 * 1024);
 /// io::copy(&mut reader, &mut output)?;
 /// #
 /// # let expected = std::fs::read("tests/samplefiles/sample1.ref")?;
@@ -57,7 +57,7 @@ pub struct ParallelDecoderReader<R, P> {
 
 impl<R, P> ParallelDecoderReader<R, P> {
     /// Construct a new decoder from something implementing [`Read`]
-    pub fn new(pool: P, max_preread_len: usize, reader: R) -> Self {
+    pub fn new(reader: R, pool: P, max_preread_len: usize) -> Self {
         Self {
             decoder: ParallelDecoder::new(pool, max_preread_len),
 
