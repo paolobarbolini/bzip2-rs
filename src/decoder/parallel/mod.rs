@@ -1,5 +1,3 @@
-#![allow(missing_docs)]
-
 use std::convert::TryInto;
 use std::mem;
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -90,6 +88,7 @@ pub struct ParallelDecoder<P> {
 }
 
 impl<P> ParallelDecoder<P> {
+    /// Construct a new [`ParallelDecoder`], ready to decompress a new bzip2 file
     pub fn new(pool: P, max_preread_len: usize) -> Self {
         let (sender, receiver) = channel::<ChannelledBlock>();
 

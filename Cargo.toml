@@ -28,7 +28,7 @@ default = []
 
 # Crate features
 
-# use rayon as the bzip2_rs::decoder::parallel::ThreadPool
+# use rayon as the bzip2_rs::ThreadPool
 rayon = ["rayon-core"]
 
 # MSRV

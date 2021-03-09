@@ -33,7 +33,6 @@ io::copy(&mut reader, &mut decompressed_output)?;
 
 ## Upcoming features
 
-* parallel decoding support (similar to [pbzip2](https://github.com/cosnicolaou/pbzip2))
 * bzip2 encoding support
 * no_std support (is anybody interested with this?)
 
@@ -51,4 +50,4 @@ Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you shall be dual licensed as above, without any
 additional terms or conditions.
 
-[rayon]: https://crates.io/crate/rayon
+[rayon]: https://crates.io/crates/rayon

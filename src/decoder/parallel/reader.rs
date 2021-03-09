@@ -34,6 +34,7 @@ pub struct ParallelDecoderReader<R, P> {
 }
 
 impl<R, P> ParallelDecoderReader<R, P> {
+    /// Construct a new decoder from something implementing [`Read`]
     pub fn new(pool: P, max_preread_len: usize, reader: R) -> Self {
         Self {
             decoder: ParallelDecoder::new(pool, max_preread_len),
