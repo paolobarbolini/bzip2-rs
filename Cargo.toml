@@ -41,6 +41,9 @@ rustc_1_40 = ["rustc_1_37", "tinyvec/rustc_1_40"]
 rustc_1_51 = []
 nightly = ["rustc_1_40", "tinyvec/nightly_const_generics", "crc32fast/nightly"]
 
+[package.metadata.docs.rs]
+features = ["rayon"]
+
 [[bench]]
 harness = false
 name = "decoder_reader"
