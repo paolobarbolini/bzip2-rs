@@ -1,9 +1,11 @@
+/// A `Vec<u8>` which can be `read`
 pub struct ReadableVec {
     vec: Vec<u8>,
     skip: usize,
 }
 
 impl ReadableVec {
+    /// Try to fill `buf` and return the unfilled portion of it
     pub fn read<'a>(&mut self, buf: &'a mut [u8]) -> &'a mut [u8] {
         let available = &self.vec[self.skip..];
         let read = available.len().min(buf.len());
