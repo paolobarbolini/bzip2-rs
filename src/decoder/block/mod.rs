@@ -93,33 +93,20 @@ impl Block {
         out: &mut [u8],
     ) -> Result<usize, BlockError> {
         match &self.state {
-            State::ReadyForRead => {
-                let magic = reader
-                    .read_u64(48)
-                    .ok_or_else(|| BlockError::new("next magic truncated"))?;
-                match magic {
-                    BLOCK_MAGIC => {
-                        self.read_block(reader)?;
-                        self.state = State::Reading;
-
-                        self.read(reader, out)
-                    }
-                    FINAL_MAGIC => {
-                        let _crc = reader
-                            .read_u32(32)
-                            .ok_or_else(|| BlockError::new("whole stream crc truncated"))?;
-
-                        // TODO: check whole stream crc
-
-                        self.state = State::NotReady;
-                        Ok(0)
-                    }
-                    _ => {
-                        self.state = State::NotReady;
-                        Err(BlockError::new("bad magic value found"))
-                    }
+            State::ReadyForRead => match self.read_block(reader) {
+                Ok(Some(())) => {
+                    self.state = State::Reading;
+                    self.read(reader, out)
                 }
-            }
+                Ok(None) => {
+                    self.state = State::NotReady;
+                    Ok(0)
+                }
+                Err(err) => {
+                    self.state = State::NotReady;
+                    Err(err)
+                }
+            },
             State::Reading => {
                 let n = self.read_from_block(out)?;
                 if n == 0 && !out.is_empty() {
@@ -184,7 +171,29 @@ impl Block {
         Ok(read)
     }
 
-    pub fn read_block(&mut self, reader: &mut BitReader<'_>) -> Result<(), BlockError> {
+    pub fn read_block(&mut self, reader: &mut BitReader<'_>) -> Result<Option<()>, BlockError> {
+        let magic = reader
+            .read_u64(48)
+            .ok_or_else(|| BlockError::new("next magic truncated"))?;
+        match magic {
+            BLOCK_MAGIC => {
+                self.do_read_block(reader)?;
+                Ok(Some(()))
+            }
+            FINAL_MAGIC => {
+                let _crc = reader
+                    .read_u32(32)
+                    .ok_or_else(|| BlockError::new("whole stream crc truncated"))?;
+
+                // TODO: check whole stream crc
+
+                Ok(None)
+            }
+            _ => Err(BlockError::new("bad magic value found")),
+        }
+    }
+
+    fn do_read_block(&mut self, reader: &mut BitReader<'_>) -> Result<(), BlockError> {
         self.hasher = Hasher::new();
         self.tt.clear();
 
