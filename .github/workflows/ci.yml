@@ -42,7 +42,7 @@ jobs:
 
       - name: cargo clippy
         run: |
-          cargo clippy --features rustc_1_40 --features clippy --all-targets
+          cargo clippy --features rustc_1_40 --features rayon --all-targets
 
   test:
     name: test / ${{ matrix.name }}
