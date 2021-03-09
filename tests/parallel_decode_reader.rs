@@ -45,6 +45,16 @@ fn empty() {
 }
 
 #[test]
+fn empty_stream() {
+    let compressed: &[u8] = &[66, 90, 104, 51, 23, 114, 69, 56, 80, 144, 0, 0, 0, 0];
+    let mut reader = ParallelDecoderReader::new(compressed, new_pool(), usize::MAX);
+
+    let mut buf = [0; 1024];
+    let read = reader.read(&mut buf).unwrap();
+    assert_eq!(read, 0);
+}
+
+#[test]
 fn sample1() {
     let compressed = include_bytes!("samplefiles/sample1.bz2");
     let decompressed = include_bytes!("samplefiles/sample1.ref");

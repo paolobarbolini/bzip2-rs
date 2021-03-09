@@ -7,7 +7,7 @@ pub use self::reader::ParallelDecoderReader;
 use self::scanner::threaded::find_signatures_parallel;
 use self::util::ReadableVec;
 use crate::bitreader::BitReader;
-use crate::decoder::block::{Block, BlockError};
+use crate::decoder::block::{Block, BlockError, FINAL_MAGIC};
 use crate::decoder::{DecoderError, ReadState};
 use crate::header::Header;
 use crate::ThreadPool;
@@ -197,7 +197,11 @@ impl<P: ThreadPool> ParallelDecoder<P> {
     /// Write `buf` compressed bytes into this decoder
     pub fn write(&mut self, buf: &[u8]) -> Result<(), DecoderError> {
         if self.eof {
-            return Err(BlockError::new("eof").into());
+            return if buf.is_empty() {
+                Ok(())
+            } else {
+                Err(BlockError::new("eof").into())
+            };
         }
 
         match self.header.clone() {
@@ -217,7 +221,6 @@ impl<P: ThreadPool> ParallelDecoder<P> {
 
                     let in_buf = mem::replace(&mut self.in_buf, Vec::new());
                     let in_buf = Arc::<[u8]>::from(in_buf);
-                    self.skip_bits = 0;
 
                     let in_buf_ = Arc::clone(&in_buf);
                     let mut signatures = find_signatures_parallel(in_buf_, &self.pool);
@@ -228,11 +231,11 @@ impl<P: ThreadPool> ParallelDecoder<P> {
                                 // because it's still truncated at this stage
                                 self.in_buf
                                     .extend_from_slice(&in_buf[(last_signature / 8) as usize..]);
-                                self.skip_bits = (last_signature % 8) as usize;
                             } else {
                                 // this is the last write, put the last block back
                                 signatures.push(last_signature);
                             }
+                            self.skip_bits = (last_signature % 8) as usize;
 
                             for signature_index in signatures {
                                 let block_index = self.receive_pool.len();
@@ -307,7 +310,22 @@ impl<P: ThreadPool> ParallelDecoder<P> {
                         }
                         None => {
                             // no signatures where found???
-                            return Err(BlockError::new("no blocks have been found").into());
+
+                            let mut reader = BitReader::new(&in_buf);
+                            if !reader.advance_by(self.skip_bits) {
+                                return Err(
+                                    BlockError::new("no blocks have been found - eof").into()
+                                );
+                            }
+
+                            let magic = reader.read_u64(48).ok_or_else(|| {
+                                BlockError::new("no blocks have been found - eof")
+                            })?;
+                            if magic != FINAL_MAGIC {
+                                return Err(BlockError::new("no blocks have been found").into());
+                            }
+
+                            self.eof = true;
                         }
                     }
                 }
