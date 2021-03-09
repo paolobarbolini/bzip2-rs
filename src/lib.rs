@@ -56,6 +56,7 @@
 // TODO: remove once rustc 1.35 is our MSRV
 #![allow(clippy::manual_range_contains)]
 #![cfg_attr(feature = "nightly", feature(maybe_uninit_write_slice))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[doc(no_inline)]
 pub use self::decoder::{DecoderReader, ParallelDecoderReader};

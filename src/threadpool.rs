@@ -13,6 +13,7 @@ pub trait ThreadPool: Send {
 
 /// A [`ThreadPool`] implementation using the rayon global threadpool
 #[cfg(feature = "rayon")]
+#[cfg_attr(docsrs, doc(cfg(feature = "rayon")))]
 #[derive(Debug)]
 pub struct RayonThreadPool;
 

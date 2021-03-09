@@ -43,6 +43,7 @@ nightly = ["rustc_1_40", "tinyvec/nightly_const_generics", "crc32fast/nightly"]
 
 [package.metadata.docs.rs]
 features = ["rayon"]
+rustdoc-args = ["--cfg", "docsrs"]
 
 [[bench]]
 harness = false
