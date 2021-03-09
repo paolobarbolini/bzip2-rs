@@ -15,6 +15,7 @@ bzip2 = "0.4.1"
 
 [dependencies.bzip2-rs]
 path = ".."
+features = ["rayon"]
 
 # Prevent this from interfering with workspaces
 [workspace]
@@ -27,7 +28,19 @@ test = false
 doc = false
 
 [[bin]]
+name = "decompress_parallel"
+path = "fuzz_targets/decompress_parallel.rs"
+test = false
+doc = false
+
+[[bin]]
 name = "interop_decode"
 path = "fuzz_targets/interop_decode.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "interop_decode_parallel"
+path = "fuzz_targets/interop_decode_parallel.rs"
 test = false
 doc = false
