@@ -37,7 +37,7 @@ fn new_pool() -> SillyThreadPool {
 #[test]
 fn empty() {
     let compressed: &[u8] = &[];
-    let mut reader = ParallelDecoderReader::new(compressed, new_pool(), usize::MAX);
+    let mut reader = ParallelDecoderReader::new(compressed, new_pool(), usize::max_value());
 
     let mut buf = [0; 1024];
     let err = reader.read(&mut buf).unwrap_err();
@@ -47,7 +47,7 @@ fn empty() {
 #[test]
 fn empty_stream() {
     let compressed: &[u8] = &[66, 90, 104, 51, 23, 114, 69, 56, 80, 144, 0, 0, 0, 0];
-    let mut reader = ParallelDecoderReader::new(compressed, new_pool(), usize::MAX);
+    let mut reader = ParallelDecoderReader::new(compressed, new_pool(), usize::max_value());
 
     let mut buf = [0; 1024];
     let read = reader.read(&mut buf).unwrap();
@@ -59,7 +59,8 @@ fn sample1() {
     let compressed = include_bytes!("samplefiles/sample1.bz2");
     let decompressed = include_bytes!("samplefiles/sample1.ref");
 
-    let mut reader = ParallelDecoderReader::new(compressed.as_ref(), new_pool(), usize::MAX);
+    let mut reader =
+        ParallelDecoderReader::new(compressed.as_ref(), new_pool(), usize::max_value());
 
     let mut out = Vec::new();
     reader.read_to_end(&mut out).unwrap();
@@ -73,7 +74,8 @@ fn sample2() {
     let compressed = include_bytes!("samplefiles/sample2.bz2");
     let decompressed = include_bytes!("samplefiles/sample2.ref");
 
-    let mut reader = ParallelDecoderReader::new(compressed.as_ref(), new_pool(), usize::MAX);
+    let mut reader =
+        ParallelDecoderReader::new(compressed.as_ref(), new_pool(), usize::max_value());
 
     let mut out = Vec::new();
     reader.read_to_end(&mut out).unwrap();
@@ -87,7 +89,8 @@ fn sample3() {
     let compressed = include_bytes!("samplefiles/sample3.bz2");
     let decompressed = include_bytes!("samplefiles/sample3.ref");
 
-    let mut reader = ParallelDecoderReader::new(compressed.as_ref(), new_pool(), usize::MAX);
+    let mut reader =
+        ParallelDecoderReader::new(compressed.as_ref(), new_pool(), usize::max_value());
 
     let mut out = Vec::new();
     reader.read_to_end(&mut out).unwrap();
