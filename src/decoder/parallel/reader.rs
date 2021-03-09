@@ -5,10 +5,32 @@ use super::{ParallelDecoder, ReadState, ThreadPool};
 /// A high-level **multi-threaded** decoder that wraps a [`Read`] and implements [`Read`], yielding decompressed bytes
 ///
 /// ```rust
+/// # // A fake threadpool just to make the docs build when the `rayon` feature isn't enabled
+/// # #[cfg(not(feature = "rayon"))]
+/// # struct RayonThreadPool;
+/// #
+/// # #[cfg(not(feature = "rayon"))]
+/// # impl bzip2_rs::ThreadPool for RayonThreadPool {
+/// #     fn spawn<F>(&self, func: F)
+/// #     where
+/// #         F: FnOnce() + Send + 'static,
+/// #     {
+/// #         std::thread::spawn(func);
+/// #     }
+/// #
+/// #     fn max_threads(&self) -> std::num::NonZeroUsize {
+/// #         std::num::NonZeroUsize::new(1).unwrap()
+/// #     }
+/// # }
+/// #
 /// use std::fs::File;
 /// use std::io;
 ///
-/// use bzip2_rs::{ParallelDecoderReader, RayonThreadPool};
+/// use bzip2_rs::ParallelDecoderReader;
+/// // use the rayon global threadpool as the threadpool for decoding this file.
+/// // requires the `rayon` feature to be enabled
+/// # #[cfg(feature = "rayon")]
+/// use bzip2_rs::RayonThreadPool;
 ///
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let mut compressed_file = File::open("tests/samplefiles/sample1.bz2")?;
