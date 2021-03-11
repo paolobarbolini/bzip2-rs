@@ -47,9 +47,9 @@ mod tests {
     use crate::bitreader::BitReader;
     use crate::decoder::block::BLOCK_MAGIC;
 
-    struct SillyThreadPool;
+    struct NaiveThreadPool;
 
-    impl ThreadPool for SillyThreadPool {
+    impl ThreadPool for NaiveThreadPool {
         fn spawn<F>(&self, func: F)
         where
             F: FnOnce() + Send + 'static,
@@ -78,7 +78,7 @@ mod tests {
 
             let repeated_haystack = Arc::<[u8]>::from(repeated_haystack);
 
-            let finder = find_signatures_parallel(repeated_haystack.clone(), &SillyThreadPool);
+            let finder = find_signatures_parallel(repeated_haystack.clone(), &NaiveThreadPool);
             let mut finder = finder.into_iter();
 
             for i in 0..16 {

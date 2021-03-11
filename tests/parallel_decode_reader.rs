@@ -8,10 +8,10 @@ use bzip2_rs::{ParallelDecoderReader, ThreadPool};
 use pretty_assertions::assert_eq;
 
 #[cfg(not(feature = "rayon"))]
-struct SillyThreadPool;
+struct NaiveThreadPool;
 
 #[cfg(not(feature = "rayon"))]
-impl ThreadPool for SillyThreadPool {
+impl ThreadPool for NaiveThreadPool {
     fn spawn<F>(&self, func: F)
     where
         F: FnOnce() + Send + 'static,
@@ -30,8 +30,8 @@ fn new_pool() -> RayonThreadPool {
 }
 
 #[cfg(not(feature = "rayon"))]
-fn new_pool() -> SillyThreadPool {
-    SillyThreadPool
+fn new_pool() -> NaiveThreadPool {
+    NaiveThreadPool
 }
 
 #[test]
