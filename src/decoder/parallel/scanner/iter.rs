@@ -52,7 +52,7 @@ mod tests {
 
             let mut finder = SignatureFinder::new(&repeated_haystack);
 
-            for i in 0..16 {
+            for _ in 0..16 {
                 let pos = finder.next().unwrap();
 
                 let mut reader = BitReader::new(&repeated_haystack);

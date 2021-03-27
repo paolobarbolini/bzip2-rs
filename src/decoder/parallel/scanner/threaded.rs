@@ -81,7 +81,7 @@ mod tests {
             let finder = find_signatures_parallel(repeated_haystack.clone(), &NaiveThreadPool);
             let mut finder = finder.into_iter();
 
-            for i in 0..16 {
+            for _ in 0..16 {
                 let pos = finder.next().unwrap();
 
                 let mut reader = BitReader::new(&repeated_haystack);
