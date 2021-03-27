@@ -110,6 +110,27 @@ pub struct ParallelDecoder<P> {
 
 impl<P> ParallelDecoder<P> {
     /// Construct a new [`ParallelDecoder`], ready to decompress a new bzip2 file
+    ///
+    /// Compared to [`Decoder`], this decoder implements multi-threaded decoding.
+    /// This is done by scanning the bitstream for bzip2 block signatures to find
+    /// the next block, and then decoding each of them in a separate thread.
+    /// Because of the overhead of having to scan the bitstream, this decoder really
+    /// shines on systems with more than two threads.
+    ///
+    /// [`ParallelDecoder`] takes `P` as a generic argument, which is the [`ThreadPool`]
+    /// implementation used for spawning tasks. If the `rayon` feature is enabled,
+    /// [`RayonThreadPool`] can be used, with internally uses the `rayon` global
+    /// threadpool for spawning tasks.
+    ///
+    /// `max_preread_len` defines how many bytes can be pre-read from the block. This
+    /// significantly speeds up the reading process, which would otherwise limit the decoder
+    /// to using at most two threads, independently of how many more are available.
+    /// Setting a value close to zero is then highly discouraged, at the same time
+    /// using a value higher than the amount of available memory could lead to OOM
+    /// for files with a high compression ratio.
+    ///
+    /// [`Decoder`]: crate::decoder::Decoder
+    /// [`RayonThreadPool`]: crate::RayonThreadPool
     pub fn new(pool: P, max_preread_len: usize) -> Self {
         let (sender, receiver) = channel::<ChannelledBlock>();
 
