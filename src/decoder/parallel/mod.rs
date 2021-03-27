@@ -237,9 +237,10 @@ impl<P: ThreadPool> ParallelDecoder<P> {
                             }
                             self.skip_bits = (last_signature % 8) as usize;
 
+                            let num_signatures = signatures.len();
                             for signature_index in signatures {
                                 let block_index = self.receive_pool.len();
-                                let max_preread_len = self.max_preread_len;
+                                let max_preread_len = self.max_preread_len / num_signatures;
                                 let sender = self.sender.clone();
                                 let header = header.clone();
                                 let in_buf = Arc::clone(&in_buf);
