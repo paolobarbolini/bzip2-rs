@@ -10,6 +10,9 @@ Pure Rust 100% safe bzip2 decompressor.
 
 ## Features
 
+* `rayon`: enable using the [rayon] global threadpool for parallel decoding.
+           NOTE: this feature is not subject to a MSRV. At the time of writing the MSRV for rayon is 1.36.0
+
 * Default features: Rust >= 1.34.2 is supported
 * `rustc_1_37`: bump MSRV to 1.37, enable more optimizations
 * `nightly`: require Rust Nightly, enable more optimizations
@@ -30,7 +33,6 @@ io::copy(&mut reader, &mut decompressed_output)?;
 
 ## Upcoming features
 
-* parallel decoding support (similar to [pbzip2](https://github.com/cosnicolaou/pbzip2))
 * bzip2 encoding support
 * no_std support (is anybody interested with this?)
 
@@ -47,3 +49,5 @@ at your option.
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you shall be dual licensed as above, without any
 additional terms or conditions.
+
+[rayon]: https://crates.io/crates/rayon

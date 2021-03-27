@@ -4,15 +4,17 @@ use std::convert::TryInto;
 
 use self::block::Block;
 pub use self::error::DecoderError;
+pub use self::parallel::{ParallelDecoder, ParallelDecoderReader};
 pub use self::reader::DecoderReader;
 use crate::bitreader::BitReader;
 use crate::header::Header;
 
 pub mod block;
 mod error;
+mod parallel;
 mod reader;
 
-/// A low-level decoder implementation
+/// A low-level **single-threaded** decoder implementation
 ///
 /// This decoder does no IO by itself, instead enough data
 /// has to be written to it in order for it to be able

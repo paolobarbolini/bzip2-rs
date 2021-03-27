@@ -14,7 +14,7 @@ pub struct BlockError {
 
 impl BlockError {
     #[inline(always)]
-    pub(super) fn new(reason: &'static str) -> Self {
+    pub(crate) fn new(reason: &'static str) -> Self {
         Self { reason }
     }
 }

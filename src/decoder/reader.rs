@@ -2,7 +2,7 @@ use std::io::{self, Read, Result};
 
 use super::{Decoder, ReadState, WriteState};
 
-/// A high-level decoder that wraps a [`Read`] and implements [`Read`], yielding decompressed bytes
+/// A high-level **single-threaded** decoder that wraps a [`Read`] and implements [`Read`], yielding decompressed bytes
 ///
 /// ```rust
 /// use std::fs::File;

@@ -42,7 +42,7 @@ jobs:
 
       - name: cargo clippy
         run: |
-          cargo clippy --features rustc_1_40 --all-targets
+          cargo clippy --features rustc_1_40 --features rayon --all-targets
 
   test:
     name: test / ${{ matrix.name }}
@@ -94,3 +94,18 @@ jobs:
         if: matrix.rust == 'nightly'
         run: |
           cargo test --features nightly
+
+      - name: Test (with rustc 1.37 optimizations and rayon)
+        if: matrix.rust != '1.34.2'
+        run: |
+          cargo test --features rustc_1_37,rayon
+
+      - name: Test (with rustc 1.40 optimizations and rayon)
+        if: matrix.rust != '1.37.0' && matrix.rust != '1.34.2'
+        run: |
+          cargo test --features rustc_1_40,rayon
+
+      - name: Test (with rustc nightly optimizations and rayon)
+        if: matrix.rust == 'nightly'
+        run: |
+          cargo test --features nightly,rayon

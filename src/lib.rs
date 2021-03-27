@@ -2,10 +2,21 @@
 //!
 //! ## Main APIs
 //!
+//! ### Single-threaded decoder
+//!
 //! * [`Decoder`]: low-level, no IO, bzip2 decoder
 //! * [`DecoderReader`]: high-level synchronous bzip2 decoder
 //!
+//! ### Multi-threaded decoder
+//!
+//! * [`ParallelDecoder`]: low-level, no IO, bzip2 decoder
+//! * [`ParallelDecoderReader`]: high-level synchronous bzip2 decoder
+//!
 //! ## Features
+//!
+//! * `rayon`: enable using the [rayon] global threadpool for parallel decoding.
+//!            NOTE: this feature is not subject to the normal MSRV. At the time
+//!            of writing the MSRV for rayon is 1.36.0
 //!
 //! * Default features: Rust >= 1.34.2 is supported
 //! * `rustc_1_37`: bump MSRV to 1.37, enable more optimizations
@@ -29,6 +40,8 @@
 //! ```
 //!
 //! [`Decoder`]: crate::decoder::Decoder
+//! [`ParallelDecoder`]: crate::decoder::ParallelDecoder
+//! [rayon]: https://crates.io/crates/rayon
 
 #![deny(
     trivial_casts,
@@ -43,9 +56,13 @@
 // TODO: remove once rustc 1.35 is our MSRV
 #![allow(clippy::manual_range_contains)]
 #![cfg_attr(feature = "nightly", feature(maybe_uninit_write_slice))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[doc(no_inline)]
-pub use self::decoder::DecoderReader;
+pub use self::decoder::{DecoderReader, ParallelDecoderReader};
+#[cfg(feature = "rayon")]
+pub use self::threadpool::RayonThreadPool;
+pub use self::threadpool::ThreadPool;
 
 mod bitreader;
 mod crc;
@@ -53,6 +70,7 @@ pub mod decoder;
 pub mod header;
 mod huffman;
 mod move_to_front;
+mod threadpool;
 
 #[doc(hidden)]
 #[deprecated(note = "moved to bzip2_rs::decoder::block", since = "0.1.3")]
