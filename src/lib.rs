@@ -55,6 +55,8 @@
 #![forbid(unsafe_code)]
 // TODO: remove once rustc 1.35 is our MSRV
 #![allow(clippy::manual_range_contains)]
+// TODO: remove once rustc 1.40 is our msrv
+#![allow(clippy::mem_replace_with_default)]
 #![cfg_attr(feature = "nightly", feature(maybe_uninit_write_slice))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
