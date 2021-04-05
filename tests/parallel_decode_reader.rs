@@ -5,7 +5,6 @@ use std::thread;
 #[cfg(feature = "rayon")]
 use bzip2_rs::RayonThreadPool;
 use bzip2_rs::{ParallelDecoderReader, ThreadPool};
-use pretty_assertions::assert_eq;
 
 #[cfg(not(feature = "rayon"))]
 struct NaiveThreadPool;
