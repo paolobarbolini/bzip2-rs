@@ -4,12 +4,12 @@
 //!
 //! ### Single-threaded decoder
 //!
-//! * [`Decoder`]: low-level, no IO, bzip2 decoder
+//! * [`Decoder`]: low-level, Sans I/O, bzip2 decoder
 //! * [`DecoderReader`]: high-level synchronous bzip2 decoder
 //!
 //! ### Multi-threaded decoder
 //!
-//! * [`ParallelDecoder`]: low-level, no IO, bzip2 decoder
+//! * [`ParallelDecoder`]: low-level, Sans I/O, bzip2 decoder
 //! * [`ParallelDecoderReader`]: high-level synchronous bzip2 decoder
 //!
 //! ## Features
