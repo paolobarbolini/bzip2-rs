@@ -133,7 +133,7 @@ impl CachedBitReader {
         let mut b1 = u64::from_be_bytes(data[..8].try_into().unwrap());
         b1 <<= reader.position % 8;
 
-        let mut b2 = u16::from_be_bytes(data[7..9].try_into().unwrap());
+        let mut b2 = u16::from(data[8]);
         b2 <<= reader.position % 8;
         b2 >>= 8;
 
