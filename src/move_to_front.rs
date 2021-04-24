@@ -29,7 +29,7 @@ impl MoveToFrontDecoder {
         let mut bitmaps = ArrayVec::<[u8; 16]>::new();
 
         for i in 0..16 {
-            if reader.read_bool().ok_or("symbol range truncated")? {
+            if reader.next().ok_or("symbol range truncated")? {
                 bitmaps.push(i);
             }
         }
@@ -38,7 +38,7 @@ impl MoveToFrontDecoder {
 
         for symbol_range in bitmaps {
             for symbol in 0..16 {
-                if reader.read_bool().ok_or("symbol range truncated")? {
+                if reader.next().ok_or("symbol range truncated")? {
                     symbols.push(symbol_range * 16 + symbol);
                 }
             }

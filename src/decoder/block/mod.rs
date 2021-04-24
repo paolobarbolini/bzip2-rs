@@ -202,7 +202,7 @@ impl Block {
             .ok_or_else(|| BlockError::new("crc truncated"))?;
 
         let randomised = reader
-            .read_bool()
+            .next()
             .ok_or_else(|| BlockError::new("randomised truncated"))?;
         if randomised {
             return Err(BlockError::new("randomised expected to be 'normal'"));
@@ -243,7 +243,7 @@ impl Block {
             let mut trees = 0;
 
             while reader
-                .read_bool()
+                .next()
                 .ok_or_else(|| BlockError::new("selector truncated"))?
             {
                 trees += 1;
@@ -273,14 +273,14 @@ impl Block {
                     }
 
                     if !reader
-                        .read_bool()
+                        .next()
                         .ok_or_else(|| BlockError::new("length bit1 truncated"))?
                     {
                         break;
                     }
 
                     if reader
-                        .read_bool()
+                        .next()
                         .ok_or_else(|| BlockError::new("length bit2 truncated"))?
                     {
                         length -= 1;

@@ -66,10 +66,6 @@ impl<'a> BitReader<'a> {
         Some(value)
     }
 
-    pub fn read_bool(&mut self) -> Option<bool> {
-        self.next()
-    }
-
     /// Skip arbitrary number of bits. However, you can skip at most to the end of the byte slice.
     pub fn advance_by(&mut self, bit_count: usize) -> bool {
         let end_position = self.position + bit_count;
