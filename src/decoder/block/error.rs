@@ -13,7 +13,8 @@ pub struct BlockError {
 }
 
 impl BlockError {
-    #[inline(always)]
+    #[cold]
+    #[inline(never)]
     pub(crate) fn new(reason: &'static str) -> Self {
         Self { reason }
     }
