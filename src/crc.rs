@@ -1,11 +1,7 @@
-#[cfg(feature = "nightly")]
-use std::mem::MaybeUninit;
-
 pub struct Hasher {
     // CRC32B hasher
     val: crc32fast::Hasher,
     // reversed bits
-    #[cfg(not(feature = "nightly"))]
     bytes: [u8; 512],
 }
 
@@ -13,39 +9,31 @@ impl Hasher {
     pub fn new() -> Self {
         Self {
             val: crc32fast::Hasher::new(),
-            #[cfg(not(feature = "nightly"))]
             bytes: [0; 512],
         }
     }
 
-    pub fn update(&mut self, mut buf: &[u8]) {
-        #[cfg(feature = "nightly")]
-        let mut bytes = [MaybeUninit::<u8>::uninit(); 512];
-        #[cfg(not(feature = "nightly"))]
-        let bytes = &mut self.bytes;
+    pub fn update(&mut self, buf: &[u8]) {
+        for chunk in buf.chunks(self.bytes.len()) {
+            for i in 0..chunk.len() {
+                let mut byte = chunk[i];
 
-        while !buf.is_empty() {
-            let len = buf.len().min(bytes.len());
-            #[cfg(feature = "nightly")]
-            let bytes = MaybeUninit::write_slice(&mut bytes[..len], &buf[..len]);
-            #[cfg(not(feature = "nightly"))]
-            bytes[..len].copy_from_slice(&buf[..len]);
-            buf = &buf[len..];
-
-            for byte in bytes.iter_mut() {
                 #[cfg(feature = "rustc_1_37")]
                 {
-                    *byte = byte.reverse_bits();
+                    byte = byte.reverse_bits();
                 }
 
                 #[cfg(not(feature = "rustc_1_37"))]
                 {
-                    *byte = (*byte & 0xF0) >> 4 | (*byte & 0x0F) << 4;
-                    *byte = (*byte & 0xCC) >> 2 | (*byte & 0x33) << 2;
-                    *byte = (*byte & 0xAA) >> 1 | (*byte & 0x55) << 1;
+                    byte = (byte & 0xF0) >> 4 | (byte & 0x0F) << 4;
+                    byte = (byte & 0xCC) >> 2 | (byte & 0x33) << 2;
+                    byte = (byte & 0xAA) >> 1 | (byte & 0x55) << 1;
                 }
+
+                self.bytes[i] = byte;
             }
-            self.val.update(&bytes[..len]);
+
+            self.val.update(&self.bytes[..chunk.len()]);
         }
     }
 
