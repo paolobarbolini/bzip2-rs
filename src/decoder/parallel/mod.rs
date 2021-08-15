@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::convert::TryInto;
 use std::mem;
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -17,7 +18,7 @@ mod scanner;
 mod util;
 
 /// (block index, Result<(PreRead Block, Block)>)
-type ChannelledBlock = (usize, Result<(ReadableVec, Block), BlockError>);
+type ChannelledBlock = (u32, Result<(ReadableVec, Block), BlockError>);
 
 /// A low-level **multi-threaded** decoder implementation
 ///
@@ -100,8 +101,11 @@ pub struct ParallelDecoder<P> {
     pool: P,
     sender: Sender<ChannelledBlock>,
     receiver: Receiver<ChannelledBlock>,
-    receive_index: usize,
-    receive_pool: Vec<Option<(ReadableVec, Block)>>,
+    // the next block index to be scheduled - can wrap
+    next_index: u32,
+    // the next block index expected to be received
+    receive_index: u32,
+    receive_pool: BTreeMap<u32, Option<(ReadableVec, Block)>>,
 
     max_preread_len: usize,
 
@@ -142,8 +146,9 @@ impl<P> ParallelDecoder<P> {
             pool,
             sender,
             receiver,
+            next_index: 0,
             receive_index: 0,
-            receive_pool: Vec::new(),
+            receive_pool: BTreeMap::new(),
 
             max_preread_len,
 
@@ -155,7 +160,7 @@ impl<P> ParallelDecoder<P> {
 impl<P: ThreadPool> ParallelDecoder<P> {
     /// Read decompressed data into `buf`.
     pub fn read(&mut self, buf: &mut [u8]) -> Result<ReadState, DecoderError> {
-        match self.receive_pool.get_mut(self.receive_index) {
+        match self.receive_pool.get_mut(&self.receive_index) {
             Some(Some((pre_read, block))) => {
                 // there's a block here
 
@@ -168,7 +173,10 @@ impl<P: ThreadPool> ParallelDecoder<P> {
                     let read2 = block.read_from_block(buf)?;
 
                     if read2 == 0 {
-                        self.go_to_next_block();
+                        // Deallocate this block
+                        let _ = self.receive_pool.remove(&self.receive_index);
+                        // Go to the next block
+                        self.receive_index += 1;
 
                         let r = self.read(buf)?;
                         match r {
@@ -192,7 +200,7 @@ impl<P: ThreadPool> ParallelDecoder<P> {
                     let (receive_index, block) = self.receiver.recv().unwrap();
                     let block = block?;
 
-                    self.receive_pool[receive_index] = Some(block);
+                    self.receive_pool.insert(receive_index, Some(block));
 
                     // we finally got the block we were waiting for
                     if self.receive_index == receive_index {
@@ -203,7 +211,7 @@ impl<P: ThreadPool> ParallelDecoder<P> {
             None => {
                 // this block hasn't yet been scheduled for decoding
 
-                if self.eof && self.receive_pool.len() == self.receive_index {
+                if self.eof {
                     // the eof flag has been set, and no more blocks are in the queue.
                     // we reached the eof
                     Ok(ReadState::Eof)
@@ -260,14 +268,15 @@ impl<P: ThreadPool> ParallelDecoder<P> {
 
                             let num_signatures = signatures.len();
                             for signature_index in signatures {
-                                let block_index = self.receive_pool.len();
                                 let max_preread_len = self.max_preread_len / num_signatures;
                                 let sender = self.sender.clone();
                                 let header = header.clone();
                                 let in_buf = Arc::clone(&in_buf);
 
                                 // get a space for writing the decoded block into
-                                self.receive_pool.push(None);
+                                let block_index = self.next_index;
+                                self.next_index = self.next_index.wrapping_add(1);
+                                self.receive_pool.insert(block_index, None);
 
                                 // spawn the block decoder
                                 self.pool.spawn(move || {
@@ -365,12 +374,5 @@ impl<P: ThreadPool> ParallelDecoder<P> {
         }
 
         Ok(())
-    }
-
-    fn go_to_next_block(&mut self) {
-        // deallocate Block and Vec<u8>
-        self.receive_pool[self.receive_index] = None;
-        // go to the next block
-        self.receive_index += 1;
     }
 }
