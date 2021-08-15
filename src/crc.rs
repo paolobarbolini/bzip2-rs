@@ -15,6 +15,7 @@ impl Hasher {
 
     pub fn update(&mut self, buf: &[u8]) {
         for chunk in buf.chunks(self.bytes.len()) {
+            #[allow(clippy::needless_range_loop)]
             for i in 0..chunk.len() {
                 let mut byte = chunk[i];
 

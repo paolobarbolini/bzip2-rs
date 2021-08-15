@@ -238,7 +238,7 @@ impl<P: ThreadPool> ParallelDecoder<P> {
                 if buf.is_empty() {
                     self.eof = true;
                 } else {
-                    self.in_buf.extend_from_slice(&buf);
+                    self.in_buf.extend_from_slice(buf);
                 }
 
                 let skip_bytes = self.skip_bits / 8;
@@ -362,7 +362,7 @@ impl<P: ThreadPool> ParallelDecoder<P> {
                 }
             }
             None => {
-                self.in_buf.extend_from_slice(&buf);
+                self.in_buf.extend_from_slice(buf);
 
                 if self.in_buf.len() >= 4 {
                     let header = Header::parse(self.in_buf[..4].try_into().unwrap())?;
