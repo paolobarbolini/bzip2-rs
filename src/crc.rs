@@ -1,40 +1,54 @@
 pub struct Hasher {
     // CRC32B hasher
     val: crc32fast::Hasher,
-    // reversed bits
-    bytes: [u8; 512],
 }
 
 impl Hasher {
     pub fn new() -> Self {
         Self {
             val: crc32fast::Hasher::new(),
-            bytes: [0; 512],
         }
     }
 
+    #[cfg(feature = "rustc_1_37")]
     pub fn update(&mut self, buf: &[u8]) {
-        for chunk in buf.chunks(self.bytes.len()) {
+        let mut bytes = [0u8; 512];
+        let mut chunks = buf.chunks_exact(bytes.len());
+
+        for full_chunk in &mut chunks {
+            #[allow(clippy::needless_range_loop)]
+            for i in 0..full_chunk.len() {
+                bytes[i] = full_chunk[i].reverse_bits();
+            }
+
+            self.val.update(&bytes);
+        }
+
+        let chunk = chunks.remainder();
+        #[allow(clippy::needless_range_loop)]
+        for i in 0..chunk.len() {
+            bytes[i] = chunk[i].reverse_bits();
+        }
+
+        self.val.update(&bytes[..chunk.len()]);
+    }
+
+    #[cfg(not(feature = "rustc_1_37"))]
+    pub fn update(&mut self, buf: &[u8]) {
+        let mut bytes = [0u8; 512];
+        for chunk in buf.chunks(bytes.len()) {
             #[allow(clippy::needless_range_loop)]
             for i in 0..chunk.len() {
                 let mut byte = chunk[i];
 
-                #[cfg(feature = "rustc_1_37")]
-                {
-                    byte = byte.reverse_bits();
-                }
+                byte = (byte & 0xF0) >> 4 | (byte & 0x0F) << 4;
+                byte = (byte & 0xCC) >> 2 | (byte & 0x33) << 2;
+                byte = (byte & 0xAA) >> 1 | (byte & 0x55) << 1;
 
-                #[cfg(not(feature = "rustc_1_37"))]
-                {
-                    byte = (byte & 0xF0) >> 4 | (byte & 0x0F) << 4;
-                    byte = (byte & 0xCC) >> 2 | (byte & 0x33) << 2;
-                    byte = (byte & 0xAA) >> 1 | (byte & 0x55) << 1;
-                }
-
-                self.bytes[i] = byte;
+                bytes[i] = byte;
             }
 
-            self.val.update(&self.bytes[..chunk.len()]);
+            self.val.update(&bytes[..chunk.len()]);
         }
     }
 
