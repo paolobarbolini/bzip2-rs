@@ -6,8 +6,8 @@ pub struct BitReader<'a> {
 }
 
 impl<'a> BitReader<'a> {
-    pub fn new(bytes: &'a [u8]) -> BitReader<'a> {
-        BitReader { bytes, position: 0 }
+    pub fn new(bytes: &'a [u8], position: usize) -> BitReader<'a> {
+        BitReader { bytes, position }
     }
 
     pub fn read_u8(&mut self, bit_count: u8) -> Option<u8> {
@@ -66,18 +66,8 @@ impl<'a> BitReader<'a> {
         Some(value)
     }
 
-    /// Skip arbitrary number of bits. However, you can skip at most to the end of the byte slice.
-    pub fn advance_by(&mut self, bit_count: usize) -> bool {
-        let end_position = self.position + bit_count;
-        if end_position > self.bytes.len() * 8 {
-            return false;
-        }
-        self.position = end_position;
-        true
-    }
-
     /// Returns the position of the cursor, or how many bits have been read so far.
-    pub fn position(&self) -> usize {
+    pub fn bit_position(&self) -> usize {
         self.position
     }
 }

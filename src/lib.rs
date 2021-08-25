@@ -49,7 +49,7 @@
     rust_2018_idioms,
     clippy::cast_lossless,
     clippy::doc_markdown,
-    missing_docs,
+    // missing_docs,
     broken_intra_doc_links
 )]
 #![forbid(unsafe_code)]
