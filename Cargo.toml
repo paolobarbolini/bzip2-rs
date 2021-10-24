@@ -32,7 +32,7 @@ rayon = ["rayon-core"]
 # MSRV
 
 rustc_1_37 = []
-rustc_1_55 = ["tinyvec/rustc_1_55"]
+rustc_1_55 = ["rustc_1_37", "tinyvec/rustc_1_55"]
 nightly = ["rustc_1_55", "crc32fast/nightly"]
 
 [package.metadata.docs.rs]
