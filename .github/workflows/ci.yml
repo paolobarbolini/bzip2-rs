@@ -83,12 +83,12 @@ jobs:
           cargo test ${{ matrix.args }}
 
       - name: Test (with rustc 1.37 optimizations)
-        if: matrix.rust != '1.34.2' && matrix.rust != '1.55.0'
+        if: matrix.rust != '1.34.2'
         run: |
           cargo test --features rustc_1_37
 
       - name: Test (with rustc 1.55 optimizations)
-        if: matrix.rust != 'nightly'
+        if: matrix.rust != '1.34.2' && matrix.rust != '1.55.0'
         run: |
           cargo test --features rustc_1_55
 
@@ -98,12 +98,12 @@ jobs:
           cargo test --features nightly
 
       - name: Test (with rustc 1.37 optimizations and rayon)
-        if: matrix.rust != '1.34.2' && matrix.rust != '1.55.0'
+        if: matrix.rust != '1.34.2'
         run: |
           cargo test --features rustc_1_37,rayon
 
       - name: Test (with rustc 1.55 optimizations and rayon)
-        if: matrix.rust != 'nightly'
+        if: matrix.rust != '1.34.2' && matrix.rust != '1.55.0'
         run: |
           cargo test --features rustc_1_55,rayon
 
