@@ -28,6 +28,7 @@
 //! ```rust,no_run
 //! use std::fs::File;
 //! use std::io;
+//!
 //! use bzip2_rs::DecoderReader;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
