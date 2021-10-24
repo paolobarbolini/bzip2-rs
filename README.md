@@ -15,6 +15,7 @@ Pure Rust 100% safe bzip2 decompressor.
 
 * Default features: Rust >= 1.34.2 is supported
 * `rustc_1_37`: bump MSRV to 1.37, enable more optimizations
+* `rustc_1_55`: bump MSRV to 1.55, enable more optimizations
 * `nightly`: require Rust Nightly, enable more optimizations
 
 ## Usage
