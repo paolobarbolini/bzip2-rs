@@ -12,7 +12,7 @@ edition = "2018"
 
 [dependencies]
 crc32fast = "1.2.1"
-tinyvec = "1.1"
+tinyvec = "1.5"
 
 rayon-core = { version = "1.5", optional = true }
 
@@ -32,12 +32,8 @@ rayon = ["rayon-core"]
 # MSRV
 
 rustc_1_37 = []
-# soft deprecated: we don't need this tinyvec feature
-rustc_1_40 = ["rustc_1_37", "tinyvec/rustc_1_40"]
-# deprecated: the nightly_const_generics tinyvec feature also requires
-# `array_map` to be stabilized. This should have been called nightly
-rustc_1_51 = []
-nightly = ["rustc_1_40", "tinyvec/nightly_const_generics", "crc32fast/nightly"]
+rustc_1_55 = ["rustc_1_37", "tinyvec/rustc_1_55"]
+nightly = ["rustc_1_55", "crc32fast/nightly"]
 
 [package.metadata.docs.rs]
 features = ["rayon"]

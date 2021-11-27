@@ -20,6 +20,7 @@
 //!
 //! * Default features: Rust >= 1.34.2 is supported
 //! * `rustc_1_37`: bump MSRV to 1.37, enable more optimizations
+//! * `rustc_1_55`: bump MSRV to 1.55, enable more optimizations
 //! * `nightly`: require Rust Nightly, enable more optimizations
 //!
 //! ## Usage
@@ -84,7 +85,7 @@ pub mod block {
     pub type BlockError = crate::decoder::block::BlockError;
 }
 
-#[cfg(feature = "nightly")]
+#[cfg(feature = "rustc_1_55")]
 const LEN_258: usize = 258;
-#[cfg(not(feature = "nightly"))]
+#[cfg(not(feature = "rustc_1_55"))]
 const LEN_258: usize = 512;
