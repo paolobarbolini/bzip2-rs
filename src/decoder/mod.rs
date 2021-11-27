@@ -218,14 +218,14 @@ impl Decoder {
     }
 
     /// Write more compressed data into this [`Decoder`]
-    /// 
+    ///
     /// The entire `buf` will always be written. This method
     /// implements **no flow control**. Writing 1 MB always guarantees
     /// that [`Decoder::read`] will decode at least 1 full block, so
     /// it doesn't make sense to write more unless you want to OOM I guess.
     ///
     /// # Panics
-    /// 
+    ///
     /// This method panics if called _after_ the stream has been
     /// declared EOF by calling [`Decoder::write_eof`].
     pub fn write(&mut self, buf: &[u8]) {
