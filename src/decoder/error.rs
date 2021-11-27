@@ -15,6 +15,8 @@ pub enum DecoderError {
     Header(HeaderError),
     /// An error was returned by the `Block` decoder
     Block(BlockError),
+    /// The file has no blocks
+    NoBlocks,
 }
 
 impl Display for DecoderError {
@@ -22,6 +24,7 @@ impl Display for DecoderError {
         match self {
             DecoderError::Header(err) => write!(f, "header: {}", err),
             DecoderError::Block(err) => write!(f, "block: {}", err),
+            DecoderError::NoBlocks => f.write_str("compressed file doesn't contain any block"),
         }
     }
 }
@@ -45,6 +48,7 @@ impl From<DecoderError> for io::Error {
         match err {
             DecoderError::Header(err) => err.into(),
             DecoderError::Block(err) => err.into(),
+            DecoderError::NoBlocks => io::Error::new(io::ErrorKind::UnexpectedEof, err),
         }
     }
 }

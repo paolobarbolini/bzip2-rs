@@ -58,8 +58,7 @@ mod tests {
             let pos = find_next_signature(&haystack).unwrap();
             assert_eq!(pos, (1024 * 8) + (128 - 48 - shift));
 
-            let mut reader = BitReader::new(&haystack);
-            reader.advance_by(pos as usize);
+            let mut reader = BitReader::new(&haystack, pos as usize);
 
             let magic = reader.read_u64(48).unwrap();
             assert_eq!(BLOCK_MAGIC, magic);
@@ -81,8 +80,7 @@ mod tests {
             let pos = find_next_signature(&haystack).unwrap();
             assert_eq!(pos, (1024 * 8) + (128 - 48 - shift));
 
-            let mut reader = BitReader::new(&haystack);
-            reader.advance_by(pos as usize);
+            let mut reader = BitReader::new(&haystack, pos as usize);
 
             let magic = reader.read_u64(48).unwrap();
             assert_eq!(BLOCK_MAGIC, magic);

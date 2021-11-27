@@ -1,4 +1,4 @@
-use std::io::{self, Read, Result};
+use std::io::{Read, Result};
 
 use super::{ParallelDecoder, ReadState, ThreadPool};
 
@@ -89,23 +89,17 @@ impl<R, P> ParallelDecoderReader<R, P> {
 
 impl<R: Read, P: ThreadPool> Read for ParallelDecoderReader<R, P> {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-        let mut read_zero = false;
         let mut tmp_buf = [0; 1024];
 
         loop {
             match self.decoder.read(buf)? {
-                ReadState::NeedsWrite(space) => {
-                    let read = self.reader.read(&mut tmp_buf[..space.min(1024)])?;
-
-                    if read_zero && self.decoder.header.is_none() {
-                        return Err(io::Error::new(
-                            io::ErrorKind::UnexpectedEof,
-                            "The reader is empty?",
-                        ));
+                ReadState::NeedsWrite => {
+                    let read = self.reader.read(&mut tmp_buf)?;
+                    if read != 0 {
+                        self.decoder.write(&tmp_buf[..read])?;
+                    } else {
+                        self.decoder.write_eof();
                     }
-                    read_zero = read == 0;
-
-                    self.decoder.write(&tmp_buf[..read])?;
                 }
                 ReadState::Read(n) => return Ok(n),
                 ReadState::Eof => return Ok(0),

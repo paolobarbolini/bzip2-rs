@@ -8,7 +8,9 @@ pub use self::reader::ParallelDecoderReader;
 use self::scanner::threaded::find_signatures_parallel;
 use self::util::ReadableVec;
 use crate::bitreader::BitReader;
-use crate::decoder::block::{Block, BlockError, FINAL_MAGIC};
+use crate::decoder::block::{
+    BlockError, Decoder as BlockDecoder, Reader as BlockReader, FINAL_MAGIC,
+};
 use crate::decoder::{DecoderError, ReadState};
 use crate::header::Header;
 use crate::ThreadPool;
@@ -18,7 +20,7 @@ mod scanner;
 mod util;
 
 /// (block index, Result<(PreRead Block, Block)>)
-type ChannelledBlock = (u32, Result<(ReadableVec, Block), BlockError>);
+type ChannelledBlock = (u32, Result<(ReadableVec, BlockReader), BlockError>);
 
 /// A low-level **multi-threaded** decoder implementation
 ///
@@ -105,11 +107,11 @@ pub struct ParallelDecoder<P> {
     next_index: u32,
     // the next block index expected to be received
     receive_index: u32,
-    receive_pool: BTreeMap<u32, Option<(ReadableVec, Block)>>,
+    receive_pool: BTreeMap<u32, Option<(ReadableVec, BlockReader)>>,
 
     max_preread_len: usize,
 
-    eof: bool,
+    write_eof: bool,
 }
 
 impl<P> ParallelDecoder<P> {
@@ -152,7 +154,7 @@ impl<P> ParallelDecoder<P> {
 
             max_preread_len,
 
-            eof: false,
+            write_eof: false,
         }
     }
 }
@@ -164,33 +166,38 @@ impl<P: ThreadPool> ParallelDecoder<P> {
             Some(Some((pre_read, block))) => {
                 // there's a block here
 
+                if buf.is_empty() {
+                    return Ok(ReadState::Read(0));
+                }
+
                 let original_len = buf.len();
                 let buf = pre_read.read(buf);
                 let read1 = original_len - buf.len();
 
-                if !buf.is_empty() && original_len > 0 {
-                    // the pre_read has been exhausted
-                    let read2 = block.read_from_block(buf)?;
+                // `pre_read` was enough to fill `buf`
+                if buf.is_empty() {
+                    return Ok(ReadState::Read(original_len));
+                }
 
-                    if read2 == 0 {
-                        // Deallocate this block
-                        let _ = self.receive_pool.remove(&self.receive_index);
-                        // Go to the next block
-                        self.receive_index += 1;
+                // `pre_read` has been exhausted
+                let read2 = block.read(buf);
+                if read2 > 0 {
+                    return Ok(ReadState::Read(read1 + read2));
+                }
 
-                        let r = self.read(buf)?;
-                        match r {
-                            ReadState::NeedsWrite(n) if read1 == 0 => Ok(ReadState::NeedsWrite(n)),
-                            ReadState::NeedsWrite(_) => Ok(ReadState::Read(read1)),
-                            ReadState::Read(n) => Ok(ReadState::Read(read1 + n)),
-                            ReadState::Eof if read1 == 0 => Ok(ReadState::Eof),
-                            ReadState::Eof => Ok(ReadState::Read(read1)),
-                        }
-                    } else {
-                        Ok(ReadState::Read(read1 + read2))
-                    }
-                } else {
-                    Ok(ReadState::Read(read1))
+                // This block has been read in it's entirety
+
+                // Deallocate this block
+                let _ = self.receive_pool.remove(&self.receive_index);
+                // Go to the next block
+                self.receive_index += 1;
+
+                match self.read(buf)? {
+                    ReadState::NeedsWrite if read1 == 0 => Ok(ReadState::NeedsWrite),
+                    ReadState::NeedsWrite => Ok(ReadState::Read(read1)),
+                    ReadState::Read(n) => Ok(ReadState::Read(read1 + n)),
+                    ReadState::Eof if read1 == 0 => Ok(ReadState::Eof),
+                    ReadState::Eof => Ok(ReadState::Read(read1)),
                 }
             }
             Some(None) => {
@@ -211,13 +218,13 @@ impl<P: ThreadPool> ParallelDecoder<P> {
             None => {
                 // this block hasn't yet been scheduled for decoding
 
-                if self.eof {
+                if self.write_eof {
                     // the eof flag has been set, and no more blocks are in the queue.
                     // we reached the eof
                     Ok(ReadState::Eof)
                 } else {
-                    // more blocks are available for decoding
-                    Ok(ReadState::NeedsWrite(usize::max_value()))
+                    // more blocks may be available for decoding
+                    Ok(ReadState::NeedsWrite)
                 }
             }
         }
@@ -225,27 +232,22 @@ impl<P: ThreadPool> ParallelDecoder<P> {
 
     /// Write `buf` compressed bytes into this decoder
     pub fn write(&mut self, buf: &[u8]) -> Result<(), DecoderError> {
-        if self.eof {
-            return if buf.is_empty() {
-                Ok(())
-            } else {
-                Err(BlockError::new("eof").into())
-            };
-        }
+        assert!(
+            !self.write_eof,
+            "Attempted to write after calling `ParallelDecoder::write_eof`"
+        );
 
         match self.header.clone() {
             Some(header) => {
-                if buf.is_empty() {
-                    self.eof = true;
-                } else {
-                    self.in_buf.extend_from_slice(buf);
-                }
+                self.in_buf.extend_from_slice(buf);
 
                 let skip_bytes = self.skip_bits / 8;
                 let filled_portion = self.in_buf.len() - skip_bytes;
                 let min_blocks = filled_portion / (header.max_blocksize() as usize);
 
-                if buf.is_empty() || min_blocks >= self.pool.max_threads().get() {
+                if (self.write_eof && filled_portion > 0)
+                    || min_blocks >= self.pool.max_threads().get()
+                {
                     // let's decode the blocks in `self.in_buf`
 
                     let in_buf = mem::replace(&mut self.in_buf, Vec::new());
@@ -280,18 +282,14 @@ impl<P: ThreadPool> ParallelDecoder<P> {
 
                                 // spawn the block decoder
                                 self.pool.spawn(move || {
-                                    let mut reader =
-                                        BitReader::new(&in_buf[(signature_index / 8) as usize..]);
-                                    assert!(reader.advance_by((signature_index % 8) as usize));
+                                    let mut reader = BitReader::new(
+                                        &in_buf[(signature_index / 8) as usize..],
+                                        (signature_index % 8) as usize,
+                                    );
 
-                                    let mut block = Block::new(header);
-                                    match block.read_block(&mut reader) {
-                                        Ok(b) => {
-                                            if b.is_none() {
-                                                // we reached the EOF
-                                                return;
-                                            }
-
+                                    let decoder = BlockDecoder::new(header);
+                                    match decoder.decode(&mut reader) {
+                                        Ok(Some(mut reader)) => {
                                             let mut pre_read = Vec::new();
 
                                             loop {
@@ -304,33 +302,27 @@ impl<P: ThreadPool> ParallelDecoder<P> {
                                                 let mut filled = pre_read.len();
                                                 pre_read
                                                     .resize(filled + remaining.min(32 * 1024), 0);
-                                                match block.read_from_block(&mut pre_read[filled..])
-                                                {
-                                                    Ok(read) => {
-                                                        filled += read;
+                                                let read = reader.read(&mut pre_read[filled..]);
+                                                filled += read;
 
-                                                        // will the next read succeed?
-                                                        let end = filled < pre_read.len();
+                                                // will the next read succeed?
+                                                let end = filled < pre_read.len();
 
-                                                        // remove the extra zeros
-                                                        pre_read.truncate(filled);
+                                                // remove the extra zeros
+                                                pre_read.truncate(filled);
 
-                                                        if end {
-                                                            // end of block
-                                                            break;
-                                                        }
-                                                    }
-                                                    Err(err) => {
-                                                        let _ =
-                                                            sender.send((block_index, Err(err)));
-                                                        break;
-                                                    }
+                                                if end {
+                                                    // end of block
+                                                    break;
                                                 }
                                             }
 
                                             let pre_read = ReadableVec::from(pre_read);
                                             let _ =
-                                                sender.send((block_index, Ok((pre_read, block))));
+                                                sender.send((block_index, Ok((pre_read, reader))));
+                                        }
+                                        Ok(None) => {
+                                            // Block EOF
                                         }
                                         Err(err) => {
                                             let _ = sender.send((block_index, Err(err)));
@@ -342,12 +334,7 @@ impl<P: ThreadPool> ParallelDecoder<P> {
                         None => {
                             // no signatures where found???
 
-                            let mut reader = BitReader::new(&in_buf);
-                            if !reader.advance_by(self.skip_bits) {
-                                return Err(
-                                    BlockError::new("no blocks have been found - eof").into()
-                                );
-                            }
+                            let mut reader = BitReader::new(&in_buf, self.skip_bits);
 
                             let magic = reader.read_u64(48).ok_or_else(|| {
                                 BlockError::new("no blocks have been found - eof")
@@ -356,7 +343,7 @@ impl<P: ThreadPool> ParallelDecoder<P> {
                                 return Err(BlockError::new("no blocks have been found").into());
                             }
 
-                            self.eof = true;
+                            self.write_eof = true;
                         }
                     }
                 }
@@ -374,5 +361,9 @@ impl<P: ThreadPool> ParallelDecoder<P> {
         }
 
         Ok(())
+    }
+
+    pub fn write_eof(&mut self) {
+        self.write_eof = true;
     }
 }
