@@ -13,6 +13,26 @@ fn empty() {
 }
 
 #[test]
+fn incomplete_header() {
+    let compressed: &[u8] = b"BZ";
+    let mut reader = DecoderReader::new(compressed);
+
+    let mut buf = [0; 1024];
+    let err = reader.read(&mut buf).unwrap_err();
+    assert_eq!(err.kind(), io::ErrorKind::UnexpectedEof);
+}
+
+#[test]
+fn no_blocks() {
+    let compressed: &[u8] = b"BZh9";
+    let mut reader = DecoderReader::new(compressed);
+
+    let mut buf = [0; 1024];
+    let err = reader.read(&mut buf).unwrap_err();
+    assert_eq!(err.kind(), io::ErrorKind::UnexpectedEof);
+}
+
+#[test]
 #[cfg(feature = "nightly")]
 fn bad_num_selectors() {
     // Too high number of selectors causing ArrayVec::set_len to panic

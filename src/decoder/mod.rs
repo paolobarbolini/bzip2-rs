@@ -79,6 +79,7 @@ pub struct Decoder {
     skip_bits: usize,
     in_buf: Vec<u8>,
 
+    ever_read_block: bool,
     write_eof: bool,
 }
 
@@ -100,6 +101,7 @@ impl Decoder {
             skip_bits: 0,
             in_buf: Vec::new(),
 
+            ever_read_block: false,
             write_eof: false,
         }
     }
@@ -112,7 +114,6 @@ impl Decoder {
         debug_assert!(self.skip_bits / 8 <= self.in_buf.len());
 
         match &mut self.state {
-            State::Uninit if self.write_eof => Ok(ReadState::Eof),
             State::Uninit => {
                 debug_assert_eq!(self.skip_bits % 8, 0);
 
@@ -127,6 +128,8 @@ impl Decoder {
                     self.skip_bits = 4 * 8;
 
                     self.read(buf)
+                } else if self.write_eof {
+                    Err(DecoderError::NoBlocks)
                 } else {
                     Ok(ReadState::NeedsWrite)
                 }
@@ -136,6 +139,8 @@ impl Decoder {
                 if (self.write_eof && in_buf_len > 0)
                     || in_buf_len > (decoder.header().max_blocksize() as usize)
                 {
+                    self.ever_read_block = true;
+
                     let state = mem::replace(&mut self.state, State::Poisoned);
                     let decoder = match state {
                         State::Decoding(decoder) => decoder,
@@ -168,6 +173,12 @@ impl Decoder {
                             self.read(buf)
                         }
                     }
+                } else if self.write_eof {
+                    if self.ever_read_block {
+                        Ok(ReadState::Eof)
+                    } else {
+                        Err(DecoderError::NoBlocks)
+                    }
                 } else {
                     Ok(ReadState::NeedsWrite)
                 }
@@ -190,6 +201,7 @@ impl Decoder {
                 }
                 read => Ok(ReadState::Read(read)),
             },
+            State::Eof if !self.ever_read_block => Err(DecoderError::NoBlocks),
             State::Eof => Ok(ReadState::Eof),
             State::Poisoned => {
                 unreachable!("Decoder is in a Poisoned State");
