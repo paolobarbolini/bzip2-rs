@@ -108,8 +108,16 @@ impl Decoder {
 
     /// Read more decompressed data from this [`Decoder`]
     ///
-    /// See the documentation for [`ReadState`] to decide
-    /// what to do next.
+    /// This method should be called in a loop and based on the
+    /// returned [`ReadState`] act upon it. Here's a simple version
+    /// of what should be done based on the returned [`ReadState`]
+    ///
+    /// * [`ReadState::NeedsWrite`]: more data must be provided by calling
+    ///   [`Decoder::write`], or [`Decoder::write_eof`] if EOF has been reached.
+    /// * [`ReadState::Read(bytes)`]: `&buf[..bytes]` contains decoded data.
+    ///   Handle it and loop
+    /// * [`ReadState::Eof`]: [`Decoder::write_eof`] has been called and all
+    ///   remaining data has been read already. Break out of the loop.
     pub fn read(&mut self, buf: &mut [u8]) -> Result<ReadState, DecoderError> {
         debug_assert!(self.skip_bits / 8 <= self.in_buf.len());
 
@@ -210,6 +218,16 @@ impl Decoder {
     }
 
     /// Write more compressed data into this [`Decoder`]
+    /// 
+    /// The entire `buf` will always be written. This method
+    /// implements **no flow control**. Writing 1 MB always guarantees
+    /// that [`Decoder::read`] will decode at least 1 full block, so
+    /// it doesn't make sense to write more unless you want to OOM I guess.
+    ///
+    /// # Panics
+    /// 
+    /// This method panics if called _after_ the stream has been
+    /// declared EOF by calling [`Decoder::write_eof`].
     pub fn write(&mut self, buf: &[u8]) {
         assert!(
             !self.write_eof,
@@ -219,6 +237,11 @@ impl Decoder {
         self.in_buf.extend_from_slice(buf);
     }
 
+    /// Declare that the end of the compressed file has been reached
+    ///
+    /// After this no more calls to [`Decoder::write`] can be made.
+    /// [`Decoder::read`] can still be called in order the read the
+    /// remaining data.
     pub fn write_eof(&mut self) {
         self.write_eof = true;
     }
