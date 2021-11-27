@@ -51,13 +51,13 @@ mod tests {
         let compressed = &compressed[4..];
 
         let mut bits = BitReader::new(compressed, 0);
-        let  decoder = BlockDecoder::new(header);
+        let decoder = BlockDecoder::new(header);
         let mut reader = decoder.decode(&mut bits).unwrap().unwrap();
 
         let mut out = vec![0u8; decompressed.len()];
 
         let read1 = reader.read(&mut out);
-        let  decoder = reader.recycle();
+        let decoder = reader.recycle();
         let mut reader = decoder.decode(&mut bits).unwrap().unwrap();
         let read2 = reader.read(&mut out[read1..]);
         assert_eq!(&out[..read1 + read2], decompressed.as_ref());
