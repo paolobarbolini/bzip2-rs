@@ -96,6 +96,12 @@ impl Decoder {
     /// Write more compressed data into this [`Decoder`]
     pub fn write(&mut self, buf: &[u8]) {
         if !buf.is_empty() {
+            if self.skip_bits > 1024 * 8 {
+                let whole_bytes = self.skip_bits / 8;
+                self.in_buf.drain(..whole_bytes);
+                self.skip_bits -= whole_bytes * 8;
+            }
+
             self.in_buf.extend_from_slice(buf);
         } else {
             self.write_eof = true;
@@ -138,15 +144,6 @@ impl Decoder {
                 }
 
                 self.skip_bits = reader.position();
-
-                if block.is_not_ready() {
-                    let bytes = self.skip_bits / 8;
-
-                    self.in_buf.drain(..bytes);
-
-                    self.skip_bits -= bytes * 8;
-                }
-
                 Ok(ReadState::Read(read))
             }
             None => {
