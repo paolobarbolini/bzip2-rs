@@ -1,6 +1,6 @@
 use std::io::{self, Read, Result};
 
-use super::{Decoder, ReadState, WriteState};
+use super::{Decoder, ReadState};
 
 /// A high-level **single-threaded** decoder that wraps a [`Read`] and implements [`Read`], yielding decompressed bytes
 ///
@@ -52,8 +52,8 @@ impl<R: Read> Read for DecoderReader<R> {
 
         loop {
             match self.decoder.read(buf)? {
-                ReadState::NeedsWrite(space) => {
-                    let read = self.reader.read(&mut tmp_buf[..space.min(1024)])?;
+                ReadState::NeedsWrite => {
+                    let read = self.reader.read(&mut tmp_buf)?;
 
                     if read_zero && self.decoder.header_block.is_none() {
                         return Err(io::Error::new(
@@ -63,10 +63,7 @@ impl<R: Read> Read for DecoderReader<R> {
                     }
                     read_zero = read == 0;
 
-                    match self.decoder.write(&tmp_buf[..read])? {
-                        WriteState::NeedsRead => unreachable!(),
-                        WriteState::Written(written) => assert_eq!(written, read),
-                    };
+                    self.decoder.write(&tmp_buf[..read]);
                 }
                 ReadState::Read(n) => return Ok(n),
                 ReadState::Eof => return Ok(0),

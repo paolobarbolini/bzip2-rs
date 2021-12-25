@@ -49,7 +49,7 @@ type ChannelledBlock = (u32, Result<(ReadableVec, Block), BlockError>);
 /// #     }
 /// # }
 /// #
-/// use bzip2_rs::decoder::{ParallelDecoder, ReadState, WriteState};
+/// use bzip2_rs::decoder::{ParallelDecoder, ReadState};
 /// // use the rayon global threadpool as the threadpool for decoding this file.
 /// // requires the `rayon` feature to be enabled
 /// # #[cfg(feature = "rayon")]
@@ -65,13 +65,13 @@ type ChannelledBlock = (u32, Result<(ReadableVec, Block), BlockError>);
 /// let mut buf = [0; 8192];
 /// loop {
 ///     match decoder.read(&mut buf)? {
-///         ReadState::NeedsWrite(space) => {
+///         ReadState::NeedsWrite => {
 ///             // `ParallelDecoder` needs more data to be written to it before it
 ///             // can decode the next block.
 ///             // If we reached the end of the file `compressed_file.len()` will be 0,
 ///             // signaling to the `Decoder` that the last block is smaller and it can
 ///             // proceed with reading.
-///             decoder.write(&compressed_file)?;
+///             decoder.write(&compressed_file);
 ///             compressed_file = &[];
 ///         }
 ///         ReadState::Read(n) => {
@@ -180,8 +180,8 @@ impl<P: ThreadPool> ParallelDecoder<P> {
 
                         let r = self.read(buf)?;
                         match r {
-                            ReadState::NeedsWrite(n) if read1 == 0 => Ok(ReadState::NeedsWrite(n)),
-                            ReadState::NeedsWrite(_) => Ok(ReadState::Read(read1)),
+                            ReadState::NeedsWrite if read1 == 0 => Ok(ReadState::NeedsWrite),
+                            ReadState::NeedsWrite => Ok(ReadState::Read(read1)),
                             ReadState::Read(n) => Ok(ReadState::Read(read1 + n)),
                             ReadState::Eof if read1 == 0 => Ok(ReadState::Eof),
                             ReadState::Eof => Ok(ReadState::Read(read1)),
@@ -217,7 +217,7 @@ impl<P: ThreadPool> ParallelDecoder<P> {
                     Ok(ReadState::Eof)
                 } else {
                     // more blocks are available for decoding
-                    Ok(ReadState::NeedsWrite(usize::max_value()))
+                    Ok(ReadState::NeedsWrite)
                 }
             }
         }

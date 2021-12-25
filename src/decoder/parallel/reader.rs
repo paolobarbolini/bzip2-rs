@@ -94,8 +94,8 @@ impl<R: Read, P: ThreadPool> Read for ParallelDecoderReader<R, P> {
 
         loop {
             match self.decoder.read(buf)? {
-                ReadState::NeedsWrite(space) => {
-                    let read = self.reader.read(&mut tmp_buf[..space.min(1024)])?;
+                ReadState::NeedsWrite => {
+                    let read = self.reader.read(&mut tmp_buf)?;
 
                     if read_zero && self.decoder.header.is_none() {
                         return Err(io::Error::new(

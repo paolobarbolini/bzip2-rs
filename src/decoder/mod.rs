@@ -6,7 +6,7 @@ use self::block::Block;
 pub use self::error::DecoderError;
 pub use self::parallel::{ParallelDecoder, ParallelDecoderReader};
 pub use self::reader::DecoderReader;
-pub use self::state::{ReadState, WriteState};
+pub use self::state::ReadState;
 use crate::bitreader::BitReader;
 use crate::header::Header;
 
@@ -27,7 +27,7 @@ mod state;
 /// into the entire file being decompressed.
 ///
 /// ```rust
-/// use bzip2_rs::decoder::{Decoder, ReadState, WriteState};
+/// use bzip2_rs::decoder::{Decoder, ReadState};
 ///
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let mut compressed_file: &[u8] = include_bytes!("../../tests/samplefiles/sample1.bz2").as_ref();
@@ -43,16 +43,13 @@ mod state;
 /// let mut buf = [0; 1024];
 /// loop {
 ///     match decoder.read(&mut buf)? {
-///         ReadState::NeedsWrite(space) => {
+///         ReadState::NeedsWrite => {
 ///             // `Decoder` needs more data to be written to it before it
 ///             // can decode the next block.
 ///             // If we reached the end of the file `compressed_file.len()` will be 0,
 ///             // signaling to the `Decoder` that the last block is smaller and it can
 ///             // proceed with reading.
-///             match decoder.write(&compressed_file)? {
-///                 WriteState::NeedsRead => unreachable!(),
-///                 WriteState::Written(written) => compressed_file = &compressed_file[written..],
-///             };
+///             decoder.write(&compressed_file);
 ///         }
 ///         ReadState::Read(n) => {
 ///             // `n` uncompressed bytes have been read into `buf`
@@ -79,6 +76,7 @@ pub struct Decoder {
     in_buf: Vec<u8>,
 
     eof: bool,
+    write_eof: bool,
 }
 
 impl Decoder {
@@ -91,6 +89,7 @@ impl Decoder {
             in_buf: Vec::new(),
 
             eof: false,
+            write_eof: false,
         }
     }
 
@@ -111,49 +110,11 @@ impl Decoder {
     }
 
     /// Write more compressed data into this [`Decoder`]
-    ///
-    /// See the documentation for [`WriteState`] to decide
-    /// what to do next.
-    pub fn write(&mut self, buf: &[u8]) -> Result<WriteState, DecoderError> {
-        let space = self.space();
-
-        match &mut self.header_block {
-            Some((_, block)) if block.is_reading() => Ok(WriteState::NeedsRead),
-            Some((header, block)) => {
-                let written = space.min(buf.len());
-
-                self.in_buf.extend_from_slice(&buf[..written]);
-
-                let minimum = (self.skip_bits / 8) + header.max_blocksize() as usize;
-                if buf.is_empty() || self.in_buf.len() >= minimum {
-                    block.set_ready_for_read();
-                }
-
-                Ok(WriteState::Written(written))
-            }
-            None => {
-                let written = space.min(buf.len());
-                self.in_buf.extend_from_slice(&buf[..written]);
-
-                if self.in_buf.len() < 4 {
-                    return Ok(WriteState::Written(buf.len()));
-                }
-
-                let header = Header::parse(self.in_buf[..4].try_into().unwrap())?;
-                let block = Block::new(header.clone());
-                self.header_block = Some((header, block));
-
-                self.skip_bits = 4 * 8;
-
-                if written == buf.len() {
-                    return Ok(WriteState::Written(written));
-                }
-
-                match self.write(&buf[written..])? {
-                    WriteState::NeedsRead => unreachable!(),
-                    WriteState::Written(n) => Ok(WriteState::Written(n + written)),
-                }
-            }
+    pub fn write(&mut self, buf: &[u8]) {
+        if !buf.is_empty() {
+            self.in_buf.extend_from_slice(buf);
+        } else {
+            self.write_eof = true;
         }
     }
 
@@ -164,7 +125,15 @@ impl Decoder {
     pub fn read(&mut self, buf: &mut [u8]) -> Result<ReadState, DecoderError> {
         match &mut self.header_block {
             Some(_) if self.eof => Ok(ReadState::Eof),
-            Some((_, block)) if block.is_not_ready() => Ok(ReadState::NeedsWrite(self.space())),
+            Some((header, block)) if block.is_not_ready() => {
+                let minimum = (self.skip_bits / 8) + header.max_blocksize() as usize;
+                if self.write_eof || self.in_buf.len() >= minimum {
+                    block.set_ready_for_read();
+                    self.read(buf)
+                } else {
+                    Ok(ReadState::NeedsWrite)
+                }
+            }
             Some((_, block)) => {
                 let mut reader = BitReader::new(&self.in_buf, self.skip_bits);
 
@@ -177,7 +146,7 @@ impl Decoder {
                         self.eof = ready_for_read;
                     }
 
-                    return Ok(ReadState::NeedsWrite(self.space()));
+                    return Ok(ReadState::NeedsWrite);
                 }
 
                 if read == 0 && !buf.is_empty() {
@@ -196,7 +165,18 @@ impl Decoder {
 
                 Ok(ReadState::Read(read))
             }
-            None => Ok(ReadState::NeedsWrite(self.space())),
+            None => {
+                if self.in_buf.len() >= 4 {
+                    let header = Header::parse(self.in_buf[..4].try_into().unwrap())?;
+                    let block = Block::new(header.clone());
+                    self.header_block = Some((header, block));
+
+                    self.skip_bits = 4 * 8;
+                    self.read(buf)
+                } else {
+                    Ok(ReadState::NeedsWrite)
+                }
+            }
         }
     }
 }
