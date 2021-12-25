@@ -55,8 +55,7 @@ mod tests {
             for _ in 0..16 {
                 let pos = finder.next().unwrap();
 
-                let mut reader = BitReader::new(&repeated_haystack);
-                assert!(reader.advance_by(pos as usize));
+                let mut reader = BitReader::new(&repeated_haystack, pos as usize);
 
                 let magic = reader.read_u64(48).unwrap();
                 assert_eq!(BLOCK_MAGIC, magic);

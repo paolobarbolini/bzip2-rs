@@ -415,7 +415,7 @@ mod tests {
 
         let compressed = &compressed[4..];
 
-        let mut bits = BitReader::new(compressed);
+        let mut bits = BitReader::new(compressed, 0);
         let mut reader = Block::new(header);
 
         let mut out = vec![0u8; decompressed.len()];
@@ -435,7 +435,7 @@ mod tests {
 
         let compressed = &compressed[4..];
 
-        let mut bits = BitReader::new(compressed);
+        let mut bits = BitReader::new(compressed, 0);
         let mut reader = Block::new(header);
 
         let mut out = vec![0u8; decompressed.len()];
@@ -457,7 +457,7 @@ mod tests {
 
         let compressed = &compressed[4..];
 
-        let mut bits = BitReader::new(compressed);
+        let mut bits = BitReader::new(compressed, 0);
         let mut reader = Block::new(header);
 
         let mut out = vec![0u8; decompressed.len()];

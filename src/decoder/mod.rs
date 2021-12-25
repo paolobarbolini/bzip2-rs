@@ -166,8 +166,7 @@ impl Decoder {
             Some(_) if self.eof => Ok(ReadState::Eof),
             Some((_, block)) if block.is_not_ready() => Ok(ReadState::NeedsWrite(self.space())),
             Some((_, block)) => {
-                let mut reader = BitReader::new(&self.in_buf);
-                reader.advance_by(self.skip_bits);
+                let mut reader = BitReader::new(&self.in_buf, self.skip_bits);
 
                 let ready_for_read = block.is_ready_for_read();
 

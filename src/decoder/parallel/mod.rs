@@ -280,9 +280,10 @@ impl<P: ThreadPool> ParallelDecoder<P> {
 
                                 // spawn the block decoder
                                 self.pool.spawn(move || {
-                                    let mut reader =
-                                        BitReader::new(&in_buf[(signature_index / 8) as usize..]);
-                                    assert!(reader.advance_by((signature_index % 8) as usize));
+                                    let mut reader = BitReader::new(
+                                        &in_buf[(signature_index / 8) as usize..],
+                                        (signature_index % 8) as usize,
+                                    );
 
                                     let mut block = Block::new(header);
                                     match block.read_block(&mut reader) {
@@ -342,13 +343,7 @@ impl<P: ThreadPool> ParallelDecoder<P> {
                         None => {
                             // no signatures where found???
 
-                            let mut reader = BitReader::new(&in_buf);
-                            if !reader.advance_by(self.skip_bits) {
-                                return Err(
-                                    BlockError::new("no blocks have been found - eof").into()
-                                );
-                            }
-
+                            let mut reader = BitReader::new(&in_buf, self.skip_bits);
                             let magic = reader.read_u64(48).ok_or_else(|| {
                                 BlockError::new("no blocks have been found - eof")
                             })?;
