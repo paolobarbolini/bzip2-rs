@@ -93,22 +93,6 @@ impl Decoder {
         }
     }
 
-    fn space(&self) -> usize {
-        match &self.header_block {
-            Some((_, block)) if block.is_reading() => 0,
-            Some((header, _)) => {
-                let max_length = header.max_blocksize() as usize + (self.skip_bits / 8) + 1;
-                max_length - self.in_buf.len()
-            }
-            None => {
-                Header::from_raw_blocksize(1)
-                    .expect("blocksize is valid")
-                    .max_blocksize() as usize
-                    + 4
-            }
-        }
-    }
-
     /// Write more compressed data into this [`Decoder`]
     pub fn write(&mut self, buf: &[u8]) {
         if !buf.is_empty() {
