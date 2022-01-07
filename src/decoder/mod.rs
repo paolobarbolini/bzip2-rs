@@ -125,7 +125,13 @@ impl Decoder {
                 }
             }
             Some((_, block)) => {
-                let mut reader = BitReader::new(&self.in_buf, self.skip_bits);
+                let bytes_num = self.skip_bits / 8;
+                let bits_num = self.skip_bits % 8;
+
+                let mut reader = BitReader::new(&self.in_buf[bytes_num..]);
+                for _ in 0..bits_num {
+                    reader.next().expect("enough bits");
+                }
 
                 let ready_for_read = block.is_ready_for_read();
 
@@ -143,7 +149,7 @@ impl Decoder {
                     self.eof = true;
                 }
 
-                self.skip_bits = reader.position();
+                self.skip_bits += (reader.position() as usize) - bits_num;
                 Ok(ReadState::Read(read))
             }
             None => {
