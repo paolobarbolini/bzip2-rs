@@ -53,6 +53,14 @@ impl MoveToFrontDecoder {
     }
 
     pub fn decode(&mut self, n: u8) -> u8 {
+        // Optimized from
+        //
+        // ```rust
+        // let b = self.symbols[usize::from(n)];
+        // self.symbols[..=usize::from(n)].rotate_right(1);
+        // b
+        // ```
+
         let b = self.symbols[usize::from(n)];
         #[cfg(feature = "rustc_1_37")]
         self.symbols.copy_within(..usize::from(n), 1);
@@ -61,6 +69,23 @@ impl MoveToFrontDecoder {
             let symbols = self.symbols;
             self.symbols[1..=usize::from(n)].copy_from_slice(&symbols[..usize::from(n)]);
         }
+        self.symbols[0] = b;
+
+        b
+    }
+
+    // Like `decode` but only works with `n <= 6`
+    // About 25% faster because it doesn't emit a `memmove`
+    pub fn decode_small(&mut self, n: u8) -> u8 {
+        debug_assert!(n <= 6);
+
+        let b = self.symbols[usize::from(n)];
+        self.symbols[6 - usize::from(n < 6)] = self.symbols[5];
+        self.symbols[5 - usize::from(n < 5)] = self.symbols[4];
+        self.symbols[4 - usize::from(n < 4)] = self.symbols[3];
+        self.symbols[3 - usize::from(n < 3)] = self.symbols[2];
+        self.symbols[2 - usize::from(n < 2)] = self.symbols[1];
+        self.symbols[1 - usize::from(n < 1)] = self.symbols[0];
         self.symbols[0] = b;
 
         b

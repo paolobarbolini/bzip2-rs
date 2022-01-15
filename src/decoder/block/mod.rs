@@ -251,7 +251,7 @@ impl Block {
                 }
             }
 
-            *selector = selectors_decoder.decode(trees);
+            *selector = selectors_decoder.decode_small(trees);
         }
 
         let mut huffman_trees = ArrayVec::<[HuffmanTree; 6]>::new();
