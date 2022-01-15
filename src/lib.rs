@@ -62,7 +62,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[doc(no_inline)]
-pub use self::decoder::DecoderReader;
+pub use self::decoder::{DecoderReader, ParallelDecoderReader};
 #[cfg(feature = "rayon")]
 pub use self::threadpool::RayonThreadPool;
 pub use self::threadpool::ThreadPool;
