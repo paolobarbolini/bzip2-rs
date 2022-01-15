@@ -84,7 +84,10 @@ mod tests {
             for _ in 0..16 {
                 let pos = finder.next().unwrap();
 
-                let mut reader = BitReader::new(&repeated_haystack, pos as usize);
+                let mut reader = BitReader::new(&repeated_haystack);
+                for _ in 0..pos {
+                    reader.next().expect("enough bits");
+                }
 
                 let magic = reader.read_u64(48).unwrap();
                 assert_eq!(BLOCK_MAGIC, magic);
