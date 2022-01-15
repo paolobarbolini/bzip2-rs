@@ -1,6 +1,7 @@
 use tinyvec::{ArrayVec, SliceVec};
 
 use crate::bitreader::BitReader;
+use crate::decoder::block::BlockError;
 
 pub struct MoveToFrontDecoder {
     symbols: [u8; 256],
@@ -23,13 +24,16 @@ impl MoveToFrontDecoder {
         this
     }
 
-    pub fn read_from_block(reader: &mut BitReader<'_>) -> Result<(Self, usize), &'static str> {
+    pub fn read_from_block(reader: &mut BitReader<'_>) -> Result<(Self, usize), BlockError> {
         let mut this = Self::new_zeroed();
 
         let mut bitmaps = ArrayVec::<[u8; 16]>::new();
 
         for i in 0..16 {
-            if reader.next().ok_or("symbol range truncated")? {
+            if reader
+                .next()
+                .ok_or_else(|| BlockError::new("symbol range truncated"))?
+            {
                 bitmaps.push(i);
             }
         }
@@ -38,14 +42,17 @@ impl MoveToFrontDecoder {
 
         for symbol_range in bitmaps {
             for symbol in 0..16 {
-                if reader.next().ok_or("symbol range truncated")? {
+                if reader
+                    .next()
+                    .ok_or_else(|| BlockError::new("symbol range truncated"))?
+                {
                     symbols.push(symbol_range * 16 + symbol);
                 }
             }
         }
 
         if symbols.is_empty() {
-            return Err("no symbols in input");
+            return Err(BlockError::new("no symbols in input"));
         }
 
         let alpha_size = symbols.len() + 2;

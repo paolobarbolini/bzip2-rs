@@ -210,8 +210,7 @@ impl Block {
             .read_u32(24)
             .ok_or_else(|| BlockError::new("orig ptr truncated"))?;
 
-        let (mut huffman_decoder, alpha_size) =
-            MoveToFrontDecoder::read_from_block(reader).map_err(BlockError::new)?;
+        let (mut huffman_decoder, alpha_size) = MoveToFrontDecoder::read_from_block(reader)?;
 
         let huffman_groups = reader
             .read_u8(3)
