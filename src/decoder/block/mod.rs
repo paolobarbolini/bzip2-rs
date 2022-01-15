@@ -6,8 +6,6 @@ use tinyvec::ArrayVec;
 
 pub use self::error::BlockError;
 use crate::bitreader::BitReader;
-#[cfg(target_pointer_width = "64")]
-use crate::bitreader::CachedBitReader;
 use crate::crc::Hasher;
 use crate::header::Header;
 use crate::huffman::HuffmanTree;
@@ -308,9 +306,6 @@ impl Block {
         let mut c = [0u32; 256];
 
         let mut decoded = 0;
-        #[cfg(target_pointer_width = "64")]
-        let mut r = CachedBitReader::new(reader)
-            .ok_or_else(|| BlockError::new("huffman bitstream truncated"))?;
         loop {
             if decoded == 50 {
                 let selector = reverse_selectors.pop().ok_or_else(|| {
@@ -323,25 +318,9 @@ impl Block {
                 decoded = 0;
             }
 
-            #[cfg(target_pointer_width = "64")]
-            let v = {
-                let read = r.read();
-                let v = current_huffman_tree.decode(&mut r);
-
-                if r.overflowed() {
-                    r.restore(reader, read);
-                    r.refresh(reader)
-                        .ok_or_else(|| BlockError::new("huffman bitstream truncated"))?;
-
-                    current_huffman_tree.decode(&mut r)
-                } else {
-                    v
-                }
-            };
-            #[cfg(not(target_pointer_width = "64"))]
-            let v = current_huffman_tree.decode(reader);
-
-            let v = v.ok_or_else(|| BlockError::new("huffman bitstream truncated"))?;
+            let v = current_huffman_tree
+                .decode(reader)
+                .ok_or_else(|| BlockError::new("huffman bitstream truncated"))?;
             decoded += 1;
 
             if v < 2 {
@@ -382,8 +361,6 @@ impl Block {
             self.tt.push(u32::from(b));
             c[usize::from(b)] += 1;
         }
-        #[cfg(target_pointer_width = "64")]
-        r.restore(reader, r.read());
 
         if (orig_ptr as usize) >= self.tt.len() {
             return Err(BlockError::new("orig_ptr out of bounds"));
@@ -415,7 +392,7 @@ mod tests {
 
         let compressed = &compressed[4..];
 
-        let mut bits = BitReader::new(compressed, 0);
+        let mut bits = BitReader::new(compressed);
         let mut reader = Block::new(header);
 
         let mut out = vec![0u8; decompressed.len()];
@@ -435,7 +412,7 @@ mod tests {
 
         let compressed = &compressed[4..];
 
-        let mut bits = BitReader::new(compressed, 0);
+        let mut bits = BitReader::new(compressed);
         let mut reader = Block::new(header);
 
         let mut out = vec![0u8; decompressed.len()];
@@ -457,7 +434,7 @@ mod tests {
 
         let compressed = &compressed[4..];
 
-        let mut bits = BitReader::new(compressed, 0);
+        let mut bits = BitReader::new(compressed);
         let mut reader = Block::new(header);
 
         let mut out = vec![0u8; decompressed.len()];
