@@ -128,7 +128,7 @@ impl<'a> BitReader<'a> {
 
         self.remaining_bits = (bytes_slice.len() * 8) as u8;
 
-        self.read_bits += self.remaining_bits as u32;
+        self.read_bits += u32::from(self.remaining_bits);
     }
 }
 
