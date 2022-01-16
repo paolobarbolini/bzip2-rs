@@ -81,13 +81,12 @@ impl MoveToFrontDecoder {
         b
     }
 
-    // Like `decode` but only works with `n <= 6`
+    // Like `decode` but only works with `n < 6`
     // About 25% faster because it doesn't emit a `memmove`
     pub fn decode_small(&mut self, n: u8) -> u8 {
-        debug_assert!(n <= 6);
+        debug_assert!(n < 6);
 
         let b = self.symbols[usize::from(n)];
-        self.symbols[6 - usize::from(n < 6)] = self.symbols[5];
         self.symbols[5 - usize::from(n < 5)] = self.symbols[4];
         self.symbols[4 - usize::from(n < 4)] = self.symbols[3];
         self.symbols[3 - usize::from(n < 3)] = self.symbols[2];
