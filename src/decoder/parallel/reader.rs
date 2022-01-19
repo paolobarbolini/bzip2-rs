@@ -1,4 +1,8 @@
+#[cfg(feature = "nightly")]
+use std::io::ReadBuf;
 use std::io::{self, Read, Result};
+#[cfg(feature = "nightly")]
+use std::mem::MaybeUninit;
 
 use super::{ParallelDecoder, ReadState, ThreadPool};
 
@@ -90,12 +94,27 @@ impl<R, P> ParallelDecoderReader<R, P> {
 impl<R: Read, P: ThreadPool> Read for ParallelDecoderReader<R, P> {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
         let mut read_zero = false;
+        #[cfg(not(feature = "nightly"))]
         let mut tmp_buf = [0; 1024];
+        #[cfg(feature = "nightly")]
+        let mut tmp_buf = [MaybeUninit::uninit(); 1024];
+        #[cfg(feature = "nightly")]
+        let mut read_buf = ReadBuf::uninit(&mut tmp_buf);
 
         loop {
             match self.decoder.read(buf)? {
                 ReadState::NeedsWrite => {
-                    let read = self.reader.read(&mut tmp_buf)?;
+                    #[cfg(feature = "nightly")]
+                    let read = {
+                        read_buf.clear();
+                        self.reader.read_buf(&mut read_buf)?;
+                        read_buf.filled()
+                    };
+                    #[cfg(not(feature = "nightly"))]
+                    let read = {
+                        let n = self.reader.read(&mut tmp_buf)?;
+                        &tmp_buf[..n]
+                    };
 
                     if read_zero && self.decoder.header.is_none() {
                         return Err(io::Error::new(
@@ -103,9 +122,9 @@ impl<R: Read, P: ThreadPool> Read for ParallelDecoderReader<R, P> {
                             "The reader is empty?",
                         ));
                     }
-                    read_zero = read == 0;
+                    read_zero = read.is_empty();
 
-                    self.decoder.write(&tmp_buf[..read])?;
+                    self.decoder.write(read)?;
                 }
                 ReadState::Read(n) => return Ok(n),
                 ReadState::Eof => return Ok(0),
