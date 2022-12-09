@@ -16,7 +16,7 @@
 //!
 //! * `rayon`: enable using the [rayon] global threadpool for parallel decoding.
 //!            NOTE: this feature is not subject to the normal MSRV. At the time
-//!            of writing the MSRV for rayon is 1.36.0
+//!            of writing the MSRV for rayon is 1.56.0
 //!
 //! * Default features: Rust >= 1.34.2 is supported
 //! * `rustc_1_37`: bump MSRV to 1.37, enable more optimizations
