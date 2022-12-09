@@ -1,5 +1,5 @@
 #[cfg(feature = "nightly")]
-use std::io::ReadBuf;
+use std::io::BorrowedBuf;
 use std::io::{self, Read, Result};
 #[cfg(feature = "nightly")]
 use std::mem::MaybeUninit;
@@ -99,7 +99,7 @@ impl<R: Read, P: ThreadPool> Read for ParallelDecoderReader<R, P> {
         #[cfg(feature = "nightly")]
         let mut tmp_buf = [MaybeUninit::uninit(); 1024];
         #[cfg(feature = "nightly")]
-        let mut read_buf = ReadBuf::uninit(&mut tmp_buf);
+        let mut read_buf = BorrowedBuf::from(tmp_buf.as_mut_slice());
 
         loop {
             match self.decoder.read(buf)? {
@@ -107,7 +107,7 @@ impl<R: Read, P: ThreadPool> Read for ParallelDecoderReader<R, P> {
                     #[cfg(feature = "nightly")]
                     let read = {
                         read_buf.clear();
-                        self.reader.read_buf(&mut read_buf)?;
+                        self.reader.read_buf(read_buf.unfilled())?;
                         read_buf.filled()
                     };
                     #[cfg(not(feature = "nightly"))]

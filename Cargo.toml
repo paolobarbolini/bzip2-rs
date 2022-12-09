@@ -18,7 +18,7 @@ rayon-core = { version = "1.5", optional = true }
 
 [dev-dependencies]
 # bench
-criterion = "0.3.4"
+criterion = "0.4"
 bzip2 = "0.4.1"
 
 [features]
