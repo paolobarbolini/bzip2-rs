@@ -283,7 +283,8 @@ impl<P: ThreadPool> ParallelDecoder<P> {
                                     let bytes_num = signature_index / 8;
                                     let bits_num = signature_index % 8;
 
-                                    let mut reader = BitReader::new(&in_buf[bytes_num as usize..]);
+                                    let mut reader =
+                                        BitReader::new([&in_buf[bytes_num as usize..], &[]]);
                                     for _ in 0..bits_num {
                                         reader.next().expect("enough bits");
                                     }
@@ -349,7 +350,7 @@ impl<P: ThreadPool> ParallelDecoder<P> {
                             let bytes_num = self.skip_bits / 8;
                             let bits_num = self.skip_bits % 8;
 
-                            let mut reader = BitReader::new(&in_buf[bytes_num..]);
+                            let mut reader = BitReader::new([&in_buf[bytes_num..], &[]]);
                             for _ in 0..bits_num {
                                 reader.next().expect("enough bits");
                             }

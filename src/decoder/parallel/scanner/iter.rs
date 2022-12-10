@@ -55,7 +55,7 @@ mod tests {
             for _ in 0..16 {
                 let pos = finder.next().unwrap();
 
-                let mut reader = BitReader::new(&repeated_haystack);
+                let mut reader = BitReader::new([&repeated_haystack, &[]]);
                 for _ in 0..pos {
                     reader.next().expect("enough bits");
                 }

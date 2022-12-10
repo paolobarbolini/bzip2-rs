@@ -5,7 +5,7 @@ const USIZE_BYTES: usize = mem::size_of::<usize>();
 const USIZE_BITS: usize = USIZE_BYTES * 8;
 
 pub struct BitReader<'a> {
-    bytes: &'a [u8],
+    bytes: [&'a [u8]; 2],
 
     bits: usize,
     remaining_bits: u8,
@@ -14,7 +14,7 @@ pub struct BitReader<'a> {
 }
 
 impl<'a> BitReader<'a> {
-    pub fn new(bytes: &'a [u8]) -> BitReader<'a> {
+    pub fn new(bytes: [&'a [u8]; 2]) -> BitReader<'a> {
         BitReader {
             bytes,
             bits: 0,
@@ -101,34 +101,38 @@ impl<'a> BitReader<'a> {
     fn refill_bits(&mut self) {
         debug_assert_eq!(self.remaining_bits, 0);
 
-        if self.bytes.len() >= USIZE_BYTES {
-            self.refill_usize_bits();
-        } else {
-            self.refill_available_bits();
+        for bytes in &mut self.bytes {
+            match bytes.get(..USIZE_BYTES) {
+                Some(chunk) => {
+                    // Fast whole `usize` fill
+
+                    self.bits = usize::from_be_bytes(chunk.try_into().unwrap());
+                    *bytes = &bytes[USIZE_BYTES..];
+                    self.remaining_bits = USIZE_BITS as u8;
+
+                    self.read_bits += USIZE_BITS as u32;
+                    return;
+                }
+                None if !bytes.is_empty() => {
+                    // Slower smaller than `usize` fill
+
+                    let mut buf = [0u8; USIZE_BYTES];
+                    buf[..bytes.len()].copy_from_slice(bytes);
+                    self.bits = usize::from_be_bytes(buf);
+
+                    let bytes_slice = mem::replace(bytes, &[]);
+                    self.remaining_bits = (bytes_slice.len() * 8) as u8;
+
+                    self.read_bits += u32::from(self.remaining_bits);
+                    return;
+                }
+                None => {
+                    // This block is empty
+
+                    continue;
+                }
+            }
         }
-    }
-
-    fn refill_usize_bits(&mut self) {
-        self.bits = usize::from_be_bytes(self.bytes[..USIZE_BYTES].try_into().unwrap());
-        self.bytes = &self.bytes[USIZE_BYTES..];
-        self.remaining_bits = USIZE_BITS as u8;
-
-        self.read_bits += USIZE_BITS as u32;
-    }
-
-    #[inline(never)]
-    #[cold]
-    fn refill_available_bits(&mut self) {
-        debug_assert!(self.bytes.len() < USIZE_BYTES);
-
-        let mut bytes = [0u8; USIZE_BYTES];
-        bytes[..self.bytes.len()].copy_from_slice(self.bytes);
-        self.bits = usize::from_be_bytes(bytes);
-        let bytes_slice = mem::replace(&mut self.bytes, &[]);
-
-        self.remaining_bits = (bytes_slice.len() * 8) as u8;
-
-        self.read_bits += u32::from(self.remaining_bits);
     }
 }
 

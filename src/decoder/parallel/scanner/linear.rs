@@ -58,7 +58,7 @@ mod tests {
             let pos = find_next_signature(&haystack).unwrap();
             assert_eq!(pos, (1024 * 8) + (128 - 48 - shift));
 
-            let mut reader = BitReader::new(&haystack);
+            let mut reader = BitReader::new([&haystack, &[]]);
             for _ in 0..pos {
                 reader.next().expect("enough bits");
             }
@@ -83,7 +83,7 @@ mod tests {
             let pos = find_next_signature(&haystack).unwrap();
             assert_eq!(pos, (1024 * 8) + (128 - 48 - shift));
 
-            let mut reader = BitReader::new(&haystack);
+            let mut reader = BitReader::new([&haystack, &[]]);
             for _ in 0..pos {
                 reader.next().expect("enough bits");
             }
