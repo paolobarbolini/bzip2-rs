@@ -1,6 +1,7 @@
 /// State returned by [`Decoder::read`]
 ///
 /// [`Decoder::read`]: super::Decoder::read
+#[derive(Debug)]
 pub enum ReadState {
     /// Not enough data has been written to the underlying [`Decoder`]
     /// in order to allow the next block to be decoded. Call
