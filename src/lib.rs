@@ -54,7 +54,7 @@
 )]
 #![forbid(unsafe_code)]
 #![allow(clippy::mem_replace_with_default)]
-#![cfg_attr(feature = "nightly", feature(read_buf))]
+#![cfg_attr(feature = "nightly", feature(read_buf, core_io_borrowed_buf))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[doc(no_inline)]
