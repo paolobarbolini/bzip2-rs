@@ -1,6 +1,5 @@
 //! bzip2 decoding APIs
 
-#[cfg(feature = "rustc_1_63")]
 use std::collections::VecDeque;
 use std::convert::TryInto;
 
@@ -75,10 +74,7 @@ pub struct Decoder {
     header_block: Option<(Header, Block)>,
 
     skip_bits: usize,
-    #[cfg(feature = "rustc_1_63")]
     in_buf: VecDeque<u8>,
-    #[cfg(not(feature = "rustc_1_63"))]
-    in_buf: Vec<u8>,
 
     eof: bool,
     write_eof: bool,
@@ -91,10 +87,7 @@ impl Decoder {
             header_block: None,
 
             skip_bits: 0,
-            #[cfg(feature = "rustc_1_63")]
             in_buf: VecDeque::new(),
-            #[cfg(not(feature = "rustc_1_63"))]
-            in_buf: Vec::new(),
 
             eof: false,
             write_eof: false,
@@ -104,12 +97,6 @@ impl Decoder {
     /// Write more compressed data into this [`Decoder`]
     pub fn write(&mut self, buf: &[u8]) {
         if !buf.is_empty() {
-            if !cfg!(feature = "rustc_1_63") && self.skip_bits > 1024 * 8 {
-                let whole_bytes = self.skip_bits / 8;
-                self.in_buf.drain(..whole_bytes);
-                self.skip_bits -= whole_bytes * 8;
-            }
-
             self.in_buf.extend(buf);
         } else {
             self.write_eof = true;
@@ -133,7 +120,6 @@ impl Decoder {
                 }
             }
             Some((_, block)) => {
-                #[cfg(feature = "rustc_1_63")]
                 let mut reader = {
                     debug_assert!(self.skip_bits < 8);
 
@@ -141,18 +127,6 @@ impl Decoder {
                     let mut reader = BitReader::new([slice1, slice2]);
 
                     for _ in 0..self.skip_bits {
-                        reader.next().expect("enough bits");
-                    }
-
-                    reader
-                };
-                #[cfg(not(feature = "rustc_1_63"))]
-                let mut reader = {
-                    let bytes_num = self.skip_bits / 8;
-                    let bits_num = self.skip_bits % 8;
-
-                    let mut reader = BitReader::new([&self.in_buf[bytes_num..], &[]]);
-                    for _ in 0..bits_num {
                         reader.next().expect("enough bits");
                     }
 
@@ -175,25 +149,16 @@ impl Decoder {
                     self.eof = true;
                 }
 
-                #[cfg(feature = "rustc_1_63")]
-                {
-                    let bytes_num = reader.position() / 8;
-                    let bits_num = reader.position() % 8;
+                let bytes_num = reader.position() / 8;
+                let bits_num = reader.position() % 8;
 
-                    self.in_buf.drain(..bytes_num as usize);
-                    self.skip_bits = bits_num as usize;
-                }
-                #[cfg(not(feature = "rustc_1_63"))]
-                {
-                    let whole_bits = self.skip_bits / 8 * 8;
-                    self.skip_bits = whole_bits + reader.position() as usize;
-                }
+                self.in_buf.drain(..bytes_num as usize);
+                self.skip_bits = bits_num as usize;
 
                 Ok(ReadState::Read(read))
             }
             None => {
                 if self.in_buf.len() >= 4 {
-                    #[cfg(feature = "rustc_1_63")]
                     let header = {
                         debug_assert_eq!(self.skip_bits, 0);
                         let (slice1, slice2) = self.in_buf.as_slices();
@@ -201,20 +166,11 @@ impl Decoder {
                         debug_assert!(slice2.is_empty());
                         Header::parse(slice1[..4].try_into().unwrap())?
                     };
-                    #[cfg(not(feature = "rustc_1_63"))]
-                    let header = Header::parse(self.in_buf[..4].try_into().unwrap())?;
                     let block = Block::new(header.clone());
                     self.header_block = Some((header, block));
 
-                    #[cfg(feature = "rustc_1_63")]
-                    {
-                        debug_assert_eq!(self.skip_bits % 8, 0);
-                        self.in_buf.drain(..4);
-                    }
-                    #[cfg(not(feature = "rustc_1_63"))]
-                    {
-                        self.skip_bits = 4 * 8;
-                    }
+                    debug_assert_eq!(self.skip_bits % 8, 0);
+                    self.in_buf.drain(..4);
 
                     self.read(buf)
                 } else {

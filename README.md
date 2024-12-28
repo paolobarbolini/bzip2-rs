@@ -3,7 +3,7 @@
 [![crates.io](https://img.shields.io/crates/v/bzip2-rs.svg)](https://crates.io/crates/bzip2-rs)
 [![Documentation](https://docs.rs/bzip2-rs/badge.svg)](https://docs.rs/bzip2-rs)
 [![dependency status](https://deps.rs/crate/bzip2-rs/0.1.2/status.svg)](https://deps.rs/crate/bzip2-rs/0.1.2)
-[![Rustc Version 1.34.2+](https://img.shields.io/badge/rustc-1.34.2+-lightgray.svg)](https://blog.rust-lang.org/2019/04/11/Rust-1.34.0.html)
+[![Rustc Version 1.63+](https://img.shields.io/badge/rustc-1.63+-lightgray.svg)](https://blog.rust-lang.org/2022/08/11/Rust-1.63.0.html)
 [![CI](https://github.com/paolobarbolini/bzip2-rs/workflows/CI/badge.svg)](https://github.com/paolobarbolini/bzip2-rs/actions?query=workflow%3ACI)
 
 Pure Rust 100% safe bzip2 decompressor.
@@ -11,12 +11,9 @@ Pure Rust 100% safe bzip2 decompressor.
 ## Features
 
 * `rayon`: enable using the [rayon] global threadpool for parallel decoding.
-           NOTE: this feature is not subject to a MSRV. At the time of writing the MSRV for rayon is 1.56.0
+           NOTE: this feature is not subject to a MSRV. At the time of writing the MSRV for rayon is 1.63
 
-* Default features: Rust >= 1.34.2 is supported
-* `rustc_1_37`: bump MSRV to 1.37, enable more optimizations
-* `rustc_1_55`: bump MSRV to 1.55, enable more optimizations
-* `rustc_1_63`: bump MSRV to 1.63, enable more optimizations
+* Default features: Rust >= 1.63 is supported
 * `nightly`: require Rust Nightly, enable more optimizations
 
 ## Usage

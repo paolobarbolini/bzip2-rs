@@ -9,10 +9,11 @@ keywords = ["bzip2"]
 repository = "https://github.com/paolobarbolini/bzip2-rs"
 readme = "README.md"
 edition = "2018"
+rust-version = "1.63"
 
 [dependencies]
 crc32fast = "1.2.1"
-tinyvec = "1.5"
+tinyvec = { version = "1.7", features = ["rustc_1_61"] }
 
 rayon-core = { version = "1.5", optional = true }
 
@@ -31,10 +32,7 @@ rayon = ["rayon-core"]
 
 # MSRV
 
-rustc_1_37 = []
-rustc_1_55 = ["rustc_1_37", "tinyvec/rustc_1_55"]
-rustc_1_63 = ["rustc_1_55", "tinyvec/rustc_1_55"]
-nightly = ["rustc_1_63", "crc32fast/nightly"]
+nightly = ["crc32fast/nightly"]
 
 [package.metadata.docs.rs]
 features = ["rayon"]

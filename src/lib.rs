@@ -16,12 +16,9 @@
 //!
 //! * `rayon`: enable using the [rayon] global threadpool for parallel decoding.
 //!            NOTE: this feature is not subject to the normal MSRV. At the time
-//!            of writing the MSRV for rayon is 1.56.0
+//!            of writing the MSRV for rayon is 1.63
 //!
-//! * Default features: Rust >= 1.34.2 is supported
-//! * `rustc_1_37`: bump MSRV to 1.37, enable more optimizations
-//! * `rustc_1_55`: bump MSRV to 1.55, enable more optimizations
-//! * `rustc_1_63`: bump MSRV to 1.63, enable more optimizations
+//! * Default features: Rust >= 1.63 is supported
 //! * `nightly`: require Rust Nightly, enable more optimizations
 //!
 //! ## Usage
@@ -53,12 +50,9 @@
     clippy::cast_lossless,
     clippy::doc_markdown,
     missing_docs,
-    broken_intra_doc_links
+    rustdoc::broken_intra_doc_links
 )]
 #![forbid(unsafe_code)]
-// TODO: remove once rustc 1.35 is our MSRV
-#![allow(clippy::manual_range_contains)]
-// TODO: remove once rustc 1.40 is our msrv
 #![allow(clippy::mem_replace_with_default)]
 #![cfg_attr(feature = "nightly", feature(read_buf))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
@@ -76,8 +70,3 @@ pub mod header;
 mod huffman;
 mod move_to_front;
 mod threadpool;
-
-#[cfg(feature = "rustc_1_55")]
-const LEN_258: usize = 258;
-#[cfg(not(feature = "rustc_1_55"))]
-const LEN_258: usize = 512;

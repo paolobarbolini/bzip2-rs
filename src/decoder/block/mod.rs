@@ -255,7 +255,7 @@ impl Block {
 
         let mut huffman_trees = ArrayVec::<[HuffmanTree; 6]>::new();
 
-        let mut lengths = ArrayVec::<[u8; crate::LEN_258]>::new();
+        let mut lengths = ArrayVec::<[u8; 258]>::new();
         lengths.set_len(alpha_size);
 
         for _ in 0..huffman_groups {
