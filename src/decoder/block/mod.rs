@@ -215,7 +215,7 @@ impl Block {
         let huffman_groups = reader
             .read_u8(3)
             .ok_or_else(|| BlockError::new("huffmann groups truncated"))?;
-        if huffman_groups < 2 || huffman_groups > 6 {
+        if !(2..=6).contains(&huffman_groups) {
             return Err(BlockError::new("invalid number of huffman trees"));
         }
 
@@ -265,7 +265,7 @@ impl Block {
 
             for length_item in &mut *lengths {
                 loop {
-                    if length < 1 || length > 20 {
+                    if !(1..=20).contains(&length) {
                         return Err(BlockError::new("huffman length out of range"));
                     }
 

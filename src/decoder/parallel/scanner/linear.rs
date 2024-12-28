@@ -10,7 +10,7 @@ pub fn find_next_signature(buf: &[u8]) -> Option<u64> {
         macro_rules! unrolled_check {
             ($shift: expr) => {
                 let window = window >> $shift;
-                let signature = window & !(u64::max_value() << 48);
+                let signature = window & !(u64::MAX << 48);
                 if signature == BLOCK_MAGIC {
                     return Some((byte_index as u64) * 8 + (16 - $shift));
                 }

@@ -136,7 +136,7 @@ impl<'a> BitReader<'a> {
     }
 }
 
-impl<'a> Iterator for BitReader<'a> {
+impl Iterator for BitReader<'_> {
     type Item = bool;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -149,7 +149,7 @@ impl<'a> Iterator for BitReader<'a> {
         }
 
         // read the left most bit
-        let bit = self.bits & !(usize::max_value() >> 1);
+        let bit = self.bits & !(usize::MAX >> 1);
 
         self.remaining_bits -= 1;
         self.bits <<= 1;

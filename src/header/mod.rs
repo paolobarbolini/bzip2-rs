@@ -41,7 +41,7 @@ impl Header {
     /// Returns [`HeaderError::InvalidBlockSize`] if `raw_blocksize`
     /// isn't `1..=9`
     pub fn from_raw_blocksize(raw_blocksize: u8) -> Result<Self, HeaderError> {
-        if raw_blocksize < 1 || raw_blocksize > 9 {
+        if !(1..=9).contains(&raw_blocksize) {
             return Err(HeaderError::InvalidBlockSize);
         }
 

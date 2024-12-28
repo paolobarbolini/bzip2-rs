@@ -17,7 +17,7 @@ mod reader;
 mod scanner;
 mod util;
 
-/// (block index, Result<(PreRead Block, Block)>)
+/// (block index, Result<(`PreRead` Block, Block)>)
 type ChannelledBlock = (u32, Result<(ReadableVec, Block), BlockError>);
 
 /// A low-level **multi-threaded** decoder implementation

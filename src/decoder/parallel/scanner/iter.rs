@@ -12,7 +12,7 @@ impl<'a> SignatureFinder<'a> {
     }
 }
 
-impl<'a> Iterator for SignatureFinder<'a> {
+impl Iterator for SignatureFinder<'_> {
     type Item = u64;
 
     fn next(&mut self) -> Option<Self::Item> {
